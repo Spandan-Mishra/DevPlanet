@@ -1,0 +1,60 @@
+# CodeRabbit Configuration for DevPlanet Monorepo
+# Reference: https://docs.coderabbit.ai/guides/configure-coderabbit
+
+version: "2"
+language: "en-US"
+tone_instructions: >
+  You are an expert polyglot software architect and code reviewer.
+  DevPlanet is a high-performance, cost-effective procedural 3D planet generator deployed on lean VPS infrastructure.
+  Be precise, direct, and enforce strict layer separation, high computational efficiency, memory safety, and complete error handling.
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+
+  path_filters:
+    - "!**/*.min.js"
+    - "!**/*.lock"
+    - "!**/go.sum"
+    - "!**/package-lock.json"
+    - "!**/poetry.lock"
+
+  path_instructions:
+    - path: "api/**"
+      instructions: >
+        Review Go code strictly for:
+        1. Goroutine lifecycle, proper context cancellation propagation, and avoiding goroutine leaks.
+        2. Strict test isolation: all tests MUST reside inside `api/test/` (never in `internal/`).
+        3. Efficient Redis connection pool usage, key namespacing, and TTL on all cached records.
+        4. GitHub GraphQL rate limit resilience, nil safety on deeply nested AST/nodes, and graceful degradation.
+        5. Zero memory bloat to fit lean VPS hosting environments.
+
+    - path: "forge/**"
+      instructions: >
+        Review Python / algorithmic code strictly for:
+        1. NumPy / SciPy vectorization and avoiding slow Python loops in noise generation and matrix math.
+        2. Deterministic PRNG seeding (identical user/repo IDs must always generate identical landforms).
+        3. Memory management in NLP pipelines (spaCy/NLTK) and async FastAPI endpoints.
+        4. Clear mathematical bounds on generated heightmaps and HSL color blending matrices.
+        5. All unit tests MUST reside inside `forge/test/`.
+
+    - path: "canvas/**"
+      instructions: >
+        Review TypeScript / WebGL / Three.js code strictly for:
+        1. GPU memory management: proper disposal of geometries, materials, shaders, and textures.
+        2. Draw call minimization via InstancedMesh and Level-of-Detail (LOD).
+        3. Ensuring the main UI thread runs at 60 FPS (offloading heavy physics/Boids simulations).
+        4. Pure SPA architecture with no server-side rendering dependencies.
+        5. All unit tests MUST reside inside `canvas/test/`.
+
+chat:
+  auto_reply: true

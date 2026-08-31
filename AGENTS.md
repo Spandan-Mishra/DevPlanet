@@ -22,8 +22,32 @@ This is a monorepo containing all services:
 - `/api` - Go backend codebase (Data ingestion, Redis caching & task queueing)
   - `/api/test/` - Consolidated test directory (e.g. `/api/test/unit/`)
 - `/forge` - Python algorithmic engine codebase (Procedural generation)
+  - `/forge/test/` - Consolidated Python test directory
 - `/canvas` - TypeScript frontend codebase (3D WebGL renderer)
+  - `/canvas/test/` - Consolidated frontend test directory
 - `/docs` - Architecture specifications and design docs
+
+## Branching & CodeRabbit Quality Gate
+To maintain high code quality, test integrity, and strict isolation across layers, **no direct pushes to `main` are permitted for feature development**.
+
+### 1. Layer-Specific Branching Convention
+- **Format:** `<type>/<layer>-<feature-description>`
+  - Types: `feat`, `fix`, `refactor`, `test`, `perf`
+  - Layers: `api`, `forge`, `canvas`, `infra`
+  - Examples:
+    - `feat/forge-procedural-engine`
+    - `feat/forge-terrain-generator`
+    - `feat/canvas-threejs-setup`
+    - `fix/api-graphql-ratelimit`
+- **Layer Isolation:** Feature branches must strictly modify their respective layer (`api/`, `forge/`, or `canvas/`). Cross-layer changes should only occur for shared contracts or Docker Compose updates.
+
+### 2. CodeRabbit AI PR Reviews
+- Every Pull Request targeting `main` is automatically reviewed by **CodeRabbit** according to `.coderabbit.yaml`.
+- **Review Directives by Layer:**
+  - **`api/` (Go):** Concurrency safety, context cancellation, goroutine leak checks, strict test placement in `api/test/`, Redis connection pooling, and GraphQL rate limit safety.
+  - **`forge/` (Python):** NumPy vectorization over raw loops, deterministic PRNG seeding, NLP memory management, and heightmap numerical bounds.
+  - **`canvas/` (TypeScript / WebGL):** GPU resource cleanup/disposal, 60 FPS main thread guarantee, draw call minimization (InstancedMesh/LOD), and pure SPA architecture (no SSR).
+- **Merge Criteria:** All critical CodeRabbit feedback and developer reviews must be resolved before merging into `main`.
 
 ## Current Status & Milestones
 *   **Completed:**
@@ -37,12 +61,16 @@ This is a monorepo containing all services:
     *   Redis Cache layer (`internal/cache/`) with TTL & Cache-Aside pattern.
     *   Redis Async Task Queue (`internal/queue/`) & Background Worker Pool (`internal/worker/`).
     *   HTTP endpoints for synchronous fetch (`/api/v1/planet/{username}`), async job submission (`/api/v1/planet/{username}/generate`), and job polling (`/api/v1/jobs/{jobId}`).
+    *   Branching strategy and CodeRabbit configuration (`.coderabbit.yaml`) established.
 *   **Next Immediate Tasks:**
-    *   Set up *The Forge* (`forge/`) Python FastAPI service to consume ingestion payloads and generate procedural planet genomes (simplex noise elevation grids, NLP terrain modifiers, and HSL palette blending).
+    *   Create feature branch `feat/forge-procedural-engine`.
+    *   Initialize Python FastAPI service in `forge/`.
+    *   Build procedural generation engine (NumPy/SciPy noise grids, NLP terrain modifiers, and HSL palette blending).
 
 ## Agent Instructions
-1. Always maintain strict segregation between the `api`, `forge`, and `canvas` layers.
-2. Write modular, performant code suitable for a VPS deployment.
-3. Keep all tests organized inside dedicated test directories (e.g. `test/unit/`) rather than scattered in internal packages.
-4. The user acts as the lead developer; provide code for review incrementally and ensure you are aligned on direction before making massive multi-file changes.
-5. Keep this `AGENTS.md` file updated as major milestones are completed or architecture shifts.
+1. Always work within the active feature branch designated for the specific layer.
+2. Maintain strict segregation between the `api`, `forge`, and `canvas` layers.
+3. Write modular, performant code suitable for a lean VPS deployment.
+4. Keep all tests organized inside dedicated test directories (`test/unit/`) rather than scattered in internal packages.
+5. The user acts as the lead developer; provide code for review incrementally and ensure you are aligned on direction before making massive multi-file changes.
+6. Keep this `AGENTS.md` file updated as major milestones are completed or architecture shifts.
