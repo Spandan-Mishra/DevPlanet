@@ -19,14 +19,22 @@ We use a containerized, polyglot microservice approach designed to be highly sca
 
 ## Repository Structure
 This is a monorepo containing all services:
-- `/api` - Go backend codebase
-- `/forge` - Python algorithmic engine codebase
-- `/canvas` - TypeScript frontend codebase
+- `/api` - Go backend codebase (Data ingestion & Gateway)
+- `/forge` - Python algorithmic engine codebase (Procedural generation)
+- `/canvas` - TypeScript frontend codebase (3D WebGL renderer)
 - `/docs` - Architecture specifications and design docs
 
-## Current Status & Next Steps
-*   **Completed:** Project conception, architectural design, monorepo scaffolding (folders, `.gitignore`, `docker-compose.yml` created).
-*   **Next Immediate Task:** Move into the `api/` directory. Initialize the Go module (`go mod init`). Set up the basic Go folder structure (`cmd/`, `internal/`, `pkg/`). Draft the initial GitHub GraphQL query to extract user profile stats, top repos, and primary languages.
+## Current Status & Milestones
+*   **Completed:**
+    *   Project conception & architectural design.
+    *   Monorepo scaffolding.
+    *   Go API module initialized (`api/go.mod`).
+    *   GitHub GraphQL query & client implementation (`internal/github/`).
+    *   Normalized domain model and test suite (`internal/model/`).
+    *   HTTP server & REST route handler for `/api/v1/profile/{username}` and `/health`.
+*   **Next Immediate Tasks:**
+    *   Review Go API layer.
+    *   Connect Go API to Redis task queue / caching layer or proceed to *The Forge* (FastAPI procedural generation engine).
 
 ## Agent Instructions
 1. Always maintain strict segregation between the `api`, `forge`, and `canvas` layers.
