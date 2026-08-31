@@ -10,28 +10,59 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spandev/devplanet/api/internal/cache"
 	"github.com/spandev/devplanet/api/internal/config"
 	"github.com/spandev/devplanet/api/internal/github"
 	"github.com/spandev/devplanet/api/internal/handler"
+	"github.com/spandev/devplanet/api/internal/queue"
+	"github.com/spandev/devplanet/api/internal/store"
+	"github.com/spandev/devplanet/api/internal/worker"
 )
 
 func main() {
 	cfg := config.Load()
 
+	// Root context for app lifecycle
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+
+	// Initialize Redis Store (Cache & Task Queue)
+	redisClient, err := store.NewRedisClient(cfg.RedisURL)
+	if err != nil {
+		log.Printf("[WARN] Redis connection failed (%v). Starting with degraded cache/queue.\n", err)
+	} else {
+		log.Println("[INFO] Successfully connected to Redis.")
+		defer redisClient.Close()
+	}
+
+	appCache := cache.NewRedisCache(redisClient, "devplanet")
+	taskQueue := queue.NewTaskQueue(redisClient, "queue:planet_tasks")
 	ghClient := github.NewClient(cfg.GitHubToken)
-	profileHandler := handler.NewProfileHandler(ghClient)
+
+	// Start Background Worker Pool
+	if redisClient != nil {
+		planetWorker := worker.NewPlanetWorker(taskQueue, appCache, ghClient)
+		go planetWorker.Start(appCtx)
+	}
+
+	// Initialize HTTP Handlers
+	planetHandler := handler.NewPlanetHandler(appCache, taskQueue, ghClient)
+	jobHandler := handler.NewJobHandler(taskQueue)
 
 	mux := http.NewServeMux()
 
-	// Health check endpoint
+	// Health check
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ok","service":"devplanet-api"}`))
 	})
 
-	// Profile ingestion endpoint
-	mux.HandleFunc("/api/v1/profile/", profileHandler.HandleGetProfile)
+	// Planet retrieval & generation routes
+	mux.HandleFunc("/api/v1/planet/", planetHandler.HandlePlanet)
+
+	// Job polling routes
+	mux.HandleFunc("/api/v1/jobs/", jobHandler.HandleGetJob)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
@@ -44,13 +75,17 @@ func main() {
 	// Server run context for graceful shutdown
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())
 
-	// Listen for syscall signals for process to interrupt/quit
+	// Listen for syscall signals for graceful shutdown
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
 		<-sig
+		log.Println("Received termination signal, shutting down gracefully...")
 
-		// Shutdown signal with grace period of 10 seconds
+		// Stop background workers
+		appCancel()
+
+		// Allow active requests 10 seconds to finish
 		shutdownCtx, cancel := context.WithTimeout(serverCtx, 10*time.Second)
 		defer cancel()
 
@@ -61,9 +96,7 @@ func main() {
 			}
 		}()
 
-		// Trigger graceful shutdown
-		err := server.Shutdown(shutdownCtx)
-		if err != nil {
+		if err := server.Shutdown(shutdownCtx); err != nil {
 			log.Fatal(err)
 		}
 		serverStopCtx()
@@ -74,7 +107,6 @@ func main() {
 		log.Fatalf("Server listen error: %v\n", err)
 	}
 
-	// Wait for server context to be stopped
 	<-serverCtx.Done()
 	log.Println("Server shut down successfully.")
 }

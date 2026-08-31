@@ -12,14 +12,15 @@ Welcome, Agent! This file serves as the core context for the DevPlanet project. 
 
 ## Architecture & Tech Stack
 We use a containerized, polyglot microservice approach designed to be highly scalable and cost-effective on a VPS (avoiding expensive PaaS vendor lock-in).
-*   **`api/` (Go):** API Gateway and Data Ingestion. Handles GitHub GraphQL fetching and Redis task queuing. Extremely memory efficient.
+*   **`api/` (Go):** API Gateway and Data Ingestion. Handles GitHub GraphQL fetching, Redis caching, and async task queuing.
 *   **`forge/` (Python):** The algorithmic engine. Uses NumPy/SciPy for noise math and NLP for text-to-topology mapping. Generates the JSON "Planet Genome."
 *   **`canvas/` (TypeScript / React / Three.js / R3F):** The frontend SPA. Uses WebGL shaders for instant planet rendering (with Level of Detail zooming) and ECS for lifeform simulation. No server-side rendering.
 *   **Infrastructure:** Docker Compose, PostgreSQL (JSONB), Redis, Nginx, Cloudflare CDN.
 
 ## Repository Structure
 This is a monorepo containing all services:
-- `/api` - Go backend codebase (Data ingestion & Gateway)
+- `/api` - Go backend codebase (Data ingestion, Redis caching & task queueing)
+  - `/api/test/` - Consolidated test directory (e.g. `/api/test/unit/`)
 - `/forge` - Python algorithmic engine codebase (Procedural generation)
 - `/canvas` - TypeScript frontend codebase (3D WebGL renderer)
 - `/docs` - Architecture specifications and design docs
@@ -30,14 +31,18 @@ This is a monorepo containing all services:
     *   Monorepo scaffolding.
     *   Go API module initialized (`api/go.mod`).
     *   GitHub GraphQL query & client implementation (`internal/github/`).
-    *   Normalized domain model and test suite (`internal/model/`).
-    *   HTTP server & REST route handler for `/api/v1/profile/{username}` and `/health`.
+    *   Normalized domain model (`internal/model/`).
+    *   Consolidated test suite in [`api/test/unit/`](file:///home/spandev/Work/projects/DevPlanet/api/test/unit/).
+    *   Redis connection layer (`internal/store/`).
+    *   Redis Cache layer (`internal/cache/`) with TTL & Cache-Aside pattern.
+    *   Redis Async Task Queue (`internal/queue/`) & Background Worker Pool (`internal/worker/`).
+    *   HTTP endpoints for synchronous fetch (`/api/v1/planet/{username}`), async job submission (`/api/v1/planet/{username}/generate`), and job polling (`/api/v1/jobs/{jobId}`).
 *   **Next Immediate Tasks:**
-    *   Review Go API layer.
-    *   Connect Go API to Redis task queue / caching layer or proceed to *The Forge* (FastAPI procedural generation engine).
+    *   Set up *The Forge* (`forge/`) Python FastAPI service to consume ingestion payloads and generate procedural planet genomes (simplex noise elevation grids, NLP terrain modifiers, and HSL palette blending).
 
 ## Agent Instructions
 1. Always maintain strict segregation between the `api`, `forge`, and `canvas` layers.
 2. Write modular, performant code suitable for a VPS deployment.
-3. The user acts as the lead developer; provide code for review incrementally and ensure you are aligned on direction before making massive multi-file changes.
-4. Keep this `AGENTS.md` file updated as major milestones are completed or architecture shifts.
+3. Keep all tests organized inside dedicated test directories (e.g. `test/unit/`) rather than scattered in internal packages.
+4. The user acts as the lead developer; provide code for review incrementally and ensure you are aligned on direction before making massive multi-file changes.
+5. Keep this `AGENTS.md` file updated as major milestones are completed or architecture shifts.
