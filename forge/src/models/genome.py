@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 
@@ -54,7 +54,7 @@ class CelestialGenome(ForgeBaseModel):
 
 class LandformNode(ForgeBaseModel):
     repo_name: str
-    plate_center: list[float]  # [x, y, z] on S^2
+    plate_center: tuple[float, float, float]  # [x, y, z] on S^2
     plate_radius: float
     elevation_factor: float
     roughness: float
@@ -63,20 +63,20 @@ class LandformNode(ForgeBaseModel):
 
 
 class TopologyGenome(ForgeBaseModel):
-    base_radius: float
-    sea_level: float
-    max_altitude: float
-    octaves: int
-    persistence: float
-    lacunarity: float
-    domain_warp_frequency: float
-    domain_warp_amplitude: float
+    base_radius: float = Field(default=100.0, gt=0.0)
+    sea_level: float = Field(default=0.45, ge=0.0, le=1.0)
+    max_altitude: float = Field(default=25.0, gt=0.0)
+    octaves: int = Field(default=6, ge=1, le=12)
+    persistence: float = Field(default=0.5, gt=0.0, lt=1.0)
+    lacunarity: float = Field(default=2.0, gt=1.0)
+    domain_warp_frequency: float = Field(default=0.5, ge=0.0)
+    domain_warp_amplitude: float = Field(default=10.0, ge=0.0)
     landforms: list[LandformNode] = []
 
 
 class ElevationRampNode(ForgeBaseModel):
     elevation: float
-    oklab: list[float]  # [L, a, b]
+    oklab: tuple[float, float, float]  # (L, a, b)
     hex: str
 
 
@@ -123,7 +123,7 @@ class EcosystemGenome(ForgeBaseModel):
 class AtmosphereGenome(ForgeBaseModel):
     has_atmosphere: bool
     density_scale_height: float
-    rayleigh_coefficients: list[float]  # [R, G, B]
+    rayleigh_coefficients: tuple[float, float, float]  # (R, G, B)
     mie_coefficient: float
     mie_directional_g: float
     cloud_cover: float

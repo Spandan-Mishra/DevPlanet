@@ -129,7 +129,7 @@ def test_planet_genome_schema_serialization() -> None:
         atmosphere=AtmosphereGenome(
             has_atmosphere=True,
             density_scale_height=0.25,
-            rayleigh_coefficients=[0.0058, 0.0135, 0.0331],
+            rayleigh_coefficients=(0.0058, 0.0135, 0.0331),
             mie_coefficient=0.004,
             mie_directional_g=0.76,
             cloud_cover=0.5,
