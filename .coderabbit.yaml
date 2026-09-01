@@ -1,12 +1,8 @@
-# CodeRabbit Configuration for DevPlanet Monorepo
-# Reference: https://docs.coderabbit.ai/guides/configure-coderabbit
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-version: "2"
 language: "en-US"
-tone_instructions: >
-  You are an expert polyglot software architect and code reviewer.
-  DevPlanet is a high-performance, cost-effective procedural 3D planet generator deployed on lean VPS infrastructure.
-  Be precise, direct, and enforce strict layer separation, high computational efficiency, memory safety, and complete error handling.
+early_access: false
+tone_instructions: "Be concise, performance-minded, and enforce strict layer separation and zero memory leaks."
 
 reviews:
   profile: "chill"
@@ -14,12 +10,10 @@ reviews:
   high_level_summary: true
   poem: false
   review_status: true
-  collapse_walkthrough: false
+  collapse_walkthrough: true
   auto_review:
     enabled: true
     drafts: false
-    base_branches:
-      - "main"
 
   path_filters:
     - "!**/*.min.js"
@@ -30,7 +24,7 @@ reviews:
 
   path_instructions:
     - path: "api/**"
-      instructions: >
+      instructions: |
         Review Go code strictly for:
         1. Goroutine lifecycle, proper context cancellation propagation, and avoiding goroutine leaks.
         2. Strict test isolation: all tests MUST reside inside `api/test/` (never in `internal/`).
@@ -39,7 +33,7 @@ reviews:
         5. Zero memory bloat to fit lean VPS hosting environments.
 
     - path: "forge/**"
-      instructions: >
+      instructions: |
         Review Python / algorithmic code strictly for:
         1. NumPy / SciPy vectorization and avoiding slow Python loops in noise generation and matrix math.
         2. Deterministic PRNG seeding (identical user/repo IDs must always generate identical landforms).
@@ -48,7 +42,7 @@ reviews:
         5. All unit tests MUST reside inside `forge/test/`.
 
     - path: "canvas/**"
-      instructions: >
+      instructions: |
         Review TypeScript / WebGL / Three.js code strictly for:
         1. GPU memory management: proper disposal of geometries, materials, shaders, and textures.
         2. Draw call minimization via InstancedMesh and Level-of-Detail (LOD).
