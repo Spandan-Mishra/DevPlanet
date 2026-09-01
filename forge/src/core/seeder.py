@@ -1,4 +1,5 @@
 import hashlib
+import math
 from typing import Self
 
 
@@ -40,6 +41,7 @@ class DeterministicSeeder:
         """Generates a uniform float in the range [min_val, max_val).
 
         Uses 53-bit precision equivalent to standard IEEE 754 float mantissa.
+        Clamps boundary rounding cases to strictly adhere to [min_val, max_val).
         """
         if min_val >= max_val:
             raise ValueError(
@@ -47,16 +49,25 @@ class DeterministicSeeder:
             )
         # 53-bit resolution float in [0.0, 1.0)
         unit = (self.next_uint64() >> 11) * (1.0 / (1 << 53))
-        return min_val + unit * (max_val - min_val)
+        res = min_val + unit * (max_val - min_val)
+        if res >= max_val:
+            res = math.nextafter(max_val, min_val)
+        return res
 
     def next_int(self, min_val: int, max_val: int) -> int:
-        """Generates a uniform integer in the inclusive range [min_val, max_val]."""
+        """Generates an unbiased uniform integer in the inclusive range [min_val, max_val] via rejection sampling."""
         if min_val > max_val:
             raise ValueError(f"min_val ({min_val}) must be <= max_val ({max_val})")
         if min_val == max_val:
             return min_val
+
         span = (max_val - min_val) + 1
-        return min_val + (self.next_uint64() % span)
+        limit = (1 << 64) - ((1 << 64) % span)
+
+        while True:
+            sample = self.next_uint64()
+            if sample < limit:
+                return min_val + (sample % span)
 
     def fork(self, domain_tag: str) -> "DeterministicSeeder":
         """Forks an independent, deterministic child PRNG for a specific subsystem.
