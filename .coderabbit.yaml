@@ -2,7 +2,7 @@
 
 language: "en-US"
 early_access: false
-tone_instructions: "Be concise, performance-minded, and enforce strict layer separation and zero memory leaks."
+tone_instructions: "DevPlanet is a high-performance, cost-effective procedural 3D planet generator for GitHub profiles. Be concise, performance-minded, and enforce strict layer separation and zero memory leaks."
 
 reviews:
   profile: "chill"
