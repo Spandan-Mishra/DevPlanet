@@ -50,8 +50,14 @@ class SphericalTopologyEngine:
         if n <= 0:
             return []
         if n == 1:
-            # Single continent: place slightly off north pole for natural tilt
-            return [(0.0, 0.0, 1.0)]
+            # Single continent: derive location from seeded polar tilt and azimuth
+            tilt_theta = seeder.next_float(0.35, 1.25)
+            rot_phi = seeder.next_float(0.0, 2.0 * np.pi)
+            x = float(np.sin(tilt_theta) * np.cos(rot_phi))
+            y = float(np.sin(tilt_theta) * np.sin(rot_phi))
+            z = float(np.cos(tilt_theta))
+            norm = float(np.sqrt(x * x + y * y + z * z))
+            return [(x / norm, y / norm, z / norm)]
 
         points: list[tuple[float, float, float]] = []
         golden_ratio = (1.0 + np.sqrt(5.0)) / 2.0
@@ -188,7 +194,9 @@ class SphericalTopologyEngine:
         # 2. Persistence & Lacunarity with seeded micro-variance
         # Persistence [0.42, 0.58]: roughness retention across octaves
         pers_noise = topology_seeder.next_float(-0.02, 0.02)
-        persistence = float(np.clip(0.45 + 0.05 * entropy + pers_noise, 0.40, 0.60))
+        persistence = float(
+            np.clip(0.45 + 0.05 * entropy + pers_noise, 0.40, 0.60)
+        )
 
         # Lacunarity [1.90, 2.30]: frequency scaling
         lac_noise = topology_seeder.next_float(-0.05, 0.05)
