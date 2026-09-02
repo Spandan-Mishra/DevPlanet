@@ -2,6 +2,10 @@ import re
 
 import numpy as np
 
+from src.core.seeder import DeterministicSeeder
+from src.models.genome import ElevationRampNode, MathematicalProfile
+from src.models.request import LanguageStat
+
 
 class OklabColorConverter:
     """Perceptually uniform Oklab color space converter and interpolator (Björn Ottosson, 2020).
@@ -116,3 +120,113 @@ class OklabColorConverter:
             float(np.round(a, 5)),
             float(np.round(b, 5)),
         )
+
+
+class SurfaceMaterialEngine:
+    """Procedural surface material and elevation color ramp synthesizer.
+
+    Maps developer language distributions, circadian diurnal phase, and Whittaker
+    climate gradients into continuous PBR surface materials and Oklab elevation ramps.
+    """
+
+    @classmethod
+    def generate_elevation_ramp(
+        cls,
+        languages: list[LanguageStat],
+        math_profile: MathematicalProfile,
+        sea_level: float,
+        seeder: DeterministicSeeder,
+    ) -> list[ElevationRampNode]:
+        """Synthesizes a 6-stop continuous elevation color ramp in Oklab space."""
+        palette_seeder = seeder.fork("elevation_palette")
+
+        # 1. Determine primary and secondary chromatic signatures
+        if languages:
+            sorted_langs = sorted(languages, key=lambda lang: lang.bytes, reverse=True)
+            primary_hex = sorted_langs[0].color
+            secondary_hex = (
+                sorted_langs[1].color
+                if len(sorted_langs) > 1
+                else sorted_langs[0].color
+            )
+        else:
+            # Deterministic procedural default colors if no languages
+            hue_a = palette_seeder.next_float(0.0, 1.0)
+            primary_hex = "#3572a5" if hue_a > 0.5 else "#00add8"
+            secondary_hex = "#dea584"
+
+        _, prim_a, prim_b = OklabColorConverter.hex_to_oklab(primary_hex)
+        _, sec_a, sec_b = OklabColorConverter.hex_to_oklab(secondary_hex)
+
+        # 2. Diurnal albedo modulation
+        # High diurnal phase (daylight) increases surface lightness; low phase (night) deepens tones
+        albedo_mod = 0.05 * (math_profile.diurnal_phase - 0.5)
+
+        # 3. Synthesize 6 elevation ramp stops from 0.0 (trench) to 1.0 (alpine peak)
+        stops: list[tuple[float, float, float, float]] = []
+
+        # Stop 0: Deep Oceanic Trench (elev = 0.00)
+        # Deep dark basalt/abyssal tone with subtle secondary chromatic reflection
+        trench_L = float(np.clip(0.14 + albedo_mod, 0.08, 0.22))
+        trench_a = float(sec_a * 0.3)
+        trench_b = float(sec_b * 0.3 - 0.05)  # slight oceanic cool shift
+        stops.append((0.00, trench_L, trench_a, trench_b))
+
+        # Stop 1: Continental Shelf / Shallow Ocean (elev = sea_level * 0.70)
+        shelf_elev = float(np.round(sea_level * 0.70, 4))
+        shelf_L = float(np.clip(0.32 + albedo_mod, 0.22, 0.42))
+        shelf_a = float(prim_a * 0.5)
+        shelf_b = float(prim_b * 0.5 - 0.03)
+        stops.append((shelf_elev, shelf_L, shelf_a, shelf_b))
+
+        # Stop 2: Coastline & Beach Strand (elev = sea_level)
+        coast_elev = float(np.round(sea_level, 4))
+        coast_L = float(np.clip(0.50 + albedo_mod, 0.40, 0.60))
+        coast_a = float((prim_a + sec_a) * 0.4)
+        coast_b = float((prim_b + sec_b) * 0.4 + 0.02)  # warm sand/strand tint
+        stops.append((coast_elev, coast_L, coast_a, coast_b))
+
+        # Stop 3: Lowlands & Vegetative Valleys (elev = sea_level + (1 - sea_level) * 0.35)
+        lowland_elev = float(np.round(sea_level + (1.0 - sea_level) * 0.35, 4))
+        lowland_L = float(np.clip(0.60 + albedo_mod, 0.48, 0.72))
+        lowland_a = float(prim_a * 0.85)
+        lowland_b = float(prim_b * 0.85)
+        stops.append((lowland_elev, lowland_L, lowland_a, lowland_b))
+
+        # Stop 4: Mountain Plateaus & Mineral Strata (elev = sea_level + (1 - sea_level) * 0.75)
+        plateau_elev = float(np.round(sea_level + (1.0 - sea_level) * 0.75, 4))
+        plateau_L = float(np.clip(0.74 + albedo_mod, 0.62, 0.84))
+        plateau_a = float(sec_a * 0.90)
+        plateau_b = float(sec_b * 0.90)
+        stops.append((plateau_elev, plateau_L, plateau_a, plateau_b))
+
+        # Stop 5: Alpine Spires / Crystalline Summit (elev = 1.00)
+        # Night-owl devs get bioluminescent mineral glow; day devs get radiant glacial quartz
+        if math_profile.diurnal_phase < 0.35:
+            # Bioluminescent aurora summit
+            summit_L = float(np.clip(0.85 + albedo_mod, 0.75, 0.92))
+            summit_a = -0.08  # ethereal cyan/green
+            summit_b = -0.04
+        else:
+            # High-albedo glacial summit
+            summit_L = float(np.clip(0.94 + albedo_mod, 0.88, 0.99))
+            summit_a = 0.00
+            summit_b = 0.01
+        stops.append((1.00, summit_L, summit_a, summit_b))
+
+        nodes: list[ElevationRampNode] = []
+        for elev, L, a, b in stops:
+            hex_code = OklabColorConverter.oklab_to_hex(L, a, b)
+            nodes.append(
+                ElevationRampNode(
+                    elevation=elev,
+                    oklab=(
+                        float(np.round(L, 5)),
+                        float(np.round(a, 5)),
+                        float(np.round(b, 5)),
+                    ),
+                    hex=hex_code,
+                )
+            )
+
+        return nodes

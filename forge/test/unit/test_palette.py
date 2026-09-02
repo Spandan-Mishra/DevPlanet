@@ -1,6 +1,9 @@
 import pytest
 
-from src.engine.palette import OklabColorConverter
+from src.core.seeder import DeterministicSeeder
+from src.engine.palette import OklabColorConverter, SurfaceMaterialEngine
+from src.models.genome import ElevationRampNode, MathematicalProfile
+from src.models.request import LanguageStat
 
 
 def test_hex_to_srgb_parsing() -> None:
@@ -63,3 +66,56 @@ def test_oklab_lerp_monotonic_lightness() -> None:
         prev_L = lerped[0]
 
     assert prev_L == pytest.approx(white_oklab[0], abs=1e-4)
+
+
+def test_elevation_ramp_generation_with_languages() -> None:
+    """Verifies synthesis of a 6-stop monotonic elevation color ramp driven by languages."""
+    languages = [
+        LanguageStat(name="Rust", color="#dea584", bytes=7000, percentage=70.0),
+        LanguageStat(name="Go", color="#00ADD8", bytes=3000, percentage=30.0),
+    ]
+    math_profile = MathematicalProfile(
+        shannon_entropy=0.88,
+        diurnal_phase=0.80,  # Day developer
+        diurnal_coherence=0.90,
+        repo_gini_index=0.45,
+        polyglot_diversity=0.42,
+    )
+    seeder = DeterministicSeeder.from_string("test_dev")
+
+    ramp = SurfaceMaterialEngine.generate_elevation_ramp(
+        languages, math_profile, sea_level=0.45, seeder=seeder
+    )
+
+    assert len(ramp) == 6
+    for node in ramp:
+        assert isinstance(node, ElevationRampNode)
+        assert 0.0 <= node.elevation <= 1.0
+        assert 0.0 <= node.oklab[0] <= 1.0
+        assert node.hex.startswith("#") and len(node.hex) == 7
+
+    # Verify strictly monotonic elevation stops
+    elevations = [node.elevation for node in ramp]
+    assert elevations == sorted(elevations)
+    assert elevations[0] == 0.00
+    assert elevations[-1] == 1.00
+
+
+def test_elevation_ramp_fallback_no_languages() -> None:
+    """Verifies elevation ramp fallback generation when no languages are provided."""
+    math_profile = MathematicalProfile(
+        shannon_entropy=0.0,
+        diurnal_phase=0.15,  # Night owl developer
+        diurnal_coherence=0.50,
+        repo_gini_index=0.0,
+        polyglot_diversity=0.0,
+    )
+    seeder = DeterministicSeeder.from_string("empty_lang_dev")
+
+    ramp = SurfaceMaterialEngine.generate_elevation_ramp(
+        [], math_profile, sea_level=0.50, seeder=seeder
+    )
+
+    assert len(ramp) == 6
+    assert ramp[0].elevation == 0.0
+    assert ramp[-1].elevation == 1.0
