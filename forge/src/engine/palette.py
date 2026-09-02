@@ -58,9 +58,15 @@ class OklabColorConverter:
         b_lin = cls.srgb_to_linear(b_srgb)
 
         # 1. Linear sRGB to cone response LMS
-        l_cone = 0.4122214708 * r_lin + 0.5363325363 * g_lin + 0.0514459929 * b_lin
-        m_cone = 0.2119034982 * r_lin + 0.6806995451 * g_lin + 0.1073969566 * b_lin
-        s_cone = 0.0883024619 * r_lin + 0.2817188376 * g_lin + 0.6299787005 * b_lin
+        l_cone = (
+            0.4122214708 * r_lin + 0.5363325363 * g_lin + 0.0514459929 * b_lin
+        )
+        m_cone = (
+            0.2119034982 * r_lin + 0.6806995451 * g_lin + 0.1073969566 * b_lin
+        )
+        s_cone = (
+            0.0883024619 * r_lin + 0.2817188376 * g_lin + 0.6299787005 * b_lin
+        )
 
         # 2. Non-linear cube root compression
         l_prime = float(np.cbrt(l_cone))
@@ -68,9 +74,21 @@ class OklabColorConverter:
         s_prime = float(np.cbrt(s_cone))
 
         # 3. LMS' to Oklab coordinates (L, a, b)
-        L = 0.2104542553 * l_prime + 0.7936177850 * m_prime - 0.0040720468 * s_prime
-        a = 1.9779984951 * l_prime - 2.4285922050 * m_prime + 0.4505937099 * s_prime
-        b = 0.0259040371 * l_prime + 0.7827717662 * m_prime - 0.8086757660 * s_prime
+        L = (
+            0.2104542553 * l_prime
+            + 0.7936177850 * m_prime
+            - 0.0040720468 * s_prime
+        )
+        a = (
+            1.9779984951 * l_prime
+            - 2.4285922050 * m_prime
+            + 0.4505937099 * s_prime
+        )
+        b = (
+            0.0259040371 * l_prime
+            + 0.7827717662 * m_prime
+            - 0.8086757660 * s_prime
+        )
 
         return (
             float(np.round(L, 5)),
@@ -92,9 +110,19 @@ class OklabColorConverter:
         s_cone = s_prime**3
 
         # 3. LMS to Linear sRGB
-        r_lin = 4.0767439362 * l_cone - 3.3077115913 * m_cone + 0.2309699292 * s_cone
-        g_lin = -1.2684380046 * l_cone + 2.6097574011 * m_cone - 0.3413193965 * s_cone
-        b_lin = -0.0041960863 * l_cone - 0.7034186147 * m_cone + 1.7076147010 * s_cone
+        r_lin = (
+            4.0767439362 * l_cone - 3.3077115913 * m_cone + 0.2309699292 * s_cone
+        )
+        g_lin = (
+            -1.2684380046 * l_cone
+            + 2.6097574011 * m_cone
+            - 0.3413193965 * s_cone
+        )
+        b_lin = (
+            -0.0041960863 * l_cone
+            - 0.7034186147 * m_cone
+            + 1.7076147010 * s_cone
+        )
 
         # 4. Linear to gamma sRGB and clamp [0, 1]
         r_srgb = np.clip(cls.linear_to_srgb(r_lin), 0.0, 1.0)
@@ -147,7 +175,9 @@ class SurfaceMaterialEngine:
 
         # 1. Determine primary and secondary chromatic signatures
         if languages:
-            sorted_langs = sorted(languages, key=lambda lang: lang.bytes, reverse=True)
+            sorted_langs = sorted(
+                languages, key=lambda lang: lang.bytes, reverse=True
+            )
             primary_hex = sorted_langs[0].color
             secondary_hex = (
                 sorted_langs[1].color
@@ -167,7 +197,11 @@ class SurfaceMaterialEngine:
         # High diurnal phase (daylight) increases surface lightness; low phase (night) deepens tones
         albedo_mod = 0.05 * (math_profile.diurnal_phase - 0.5)
 
-        # 3. Synthesize 6 elevation ramp stops from 0.0 (trench) to 1.0 (alpine peak)
+        # 3. Guard against degenerate boundary sea levels (0.0 or 1.0) to guarantee
+        # strictly increasing elevation keys for shader interpolation
+        effective_sea = float(np.clip(sea_level, 0.08, 0.92))
+
+        # 4. Synthesize 6 elevation ramp stops from 0.0 (trench) to 1.0 (alpine peak)
         stops: list[tuple[float, float, float, float]] = []
 
         # Stop 0: Deep Oceanic Trench (elev = 0.00)
@@ -177,29 +211,33 @@ class SurfaceMaterialEngine:
         trench_b = float(sec_b * 0.3 - 0.05)  # slight oceanic cool shift
         stops.append((0.00, trench_L, trench_a, trench_b))
 
-        # Stop 1: Continental Shelf / Shallow Ocean (elev = sea_level * 0.70)
-        shelf_elev = float(np.round(sea_level * 0.70, 4))
+        # Stop 1: Continental Shelf / Shallow Ocean (elev = effective_sea * 0.60)
+        shelf_elev = float(np.round(effective_sea * 0.60, 4))
         shelf_L = float(np.clip(0.32 + albedo_mod, 0.22, 0.42))
         shelf_a = float(prim_a * 0.5)
         shelf_b = float(prim_b * 0.5 - 0.03)
         stops.append((shelf_elev, shelf_L, shelf_a, shelf_b))
 
-        # Stop 2: Coastline & Beach Strand (elev = sea_level)
-        coast_elev = float(np.round(sea_level, 4))
+        # Stop 2: Coastline & Beach Strand (elev = effective_sea)
+        coast_elev = float(np.round(effective_sea, 4))
         coast_L = float(np.clip(0.50 + albedo_mod, 0.40, 0.60))
         coast_a = float((prim_a + sec_a) * 0.4)
         coast_b = float((prim_b + sec_b) * 0.4 + 0.02)  # warm sand/strand tint
         stops.append((coast_elev, coast_L, coast_a, coast_b))
 
-        # Stop 3: Lowlands & Vegetative Valleys (elev = sea_level + (1 - sea_level) * 0.35)
-        lowland_elev = float(np.round(sea_level + (1.0 - sea_level) * 0.35, 4))
+        # Stop 3: Lowlands & Vegetative Valleys (elev = effective_sea + (1 - effective_sea) * 0.35)
+        lowland_elev = float(
+            np.round(effective_sea + (1.0 - effective_sea) * 0.35, 4)
+        )
         lowland_L = float(np.clip(0.60 + albedo_mod, 0.48, 0.72))
         lowland_a = float(prim_a * 0.85)
         lowland_b = float(prim_b * 0.85)
         stops.append((lowland_elev, lowland_L, lowland_a, lowland_b))
 
-        # Stop 4: Mountain Plateaus & Mineral Strata (elev = sea_level + (1 - sea_level) * 0.75)
-        plateau_elev = float(np.round(sea_level + (1.0 - sea_level) * 0.75, 4))
+        # Stop 4: Mountain Plateaus & Mineral Strata (elev = effective_sea + (1 - effective_sea) * 0.75)
+        plateau_elev = float(
+            np.round(effective_sea + (1.0 - effective_sea) * 0.75, 4)
+        )
         plateau_L = float(np.clip(0.74 + albedo_mod, 0.62, 0.84))
         plateau_a = float(sec_a * 0.90)
         plateau_b = float(sec_b * 0.90)
@@ -222,14 +260,14 @@ class SurfaceMaterialEngine:
         nodes: list[ElevationRampNode] = []
         for elev, L, a, b in stops:
             hex_code = OklabColorConverter.oklab_to_hex(L, a, b)
+            # Re-derive Oklab tuple from the gamut-clamped hex code for exact consistency
+            clamped_L, clamped_a, clamped_b = OklabColorConverter.hex_to_oklab(
+                hex_code
+            )
             nodes.append(
                 ElevationRampNode(
                     elevation=elev,
-                    oklab=(
-                        float(np.round(L, 5)),
-                        float(np.round(a, 5)),
-                        float(np.round(b, 5)),
-                    ),
+                    oklab=(clamped_L, clamped_a, clamped_b),
                     hex=hex_code,
                 )
             )
@@ -286,7 +324,9 @@ class SurfaceMaterialEngine:
         )
         ocean_evaporation = float(
             np.clip(
-                0.35 + 0.45 * topology.sea_level + 0.10 * (math_profile.diurnal_phase),
+                0.35
+                + 0.45 * topology.sea_level
+                + 0.10 * (math_profile.diurnal_phase),
                 0.25,
                 0.90,
             )

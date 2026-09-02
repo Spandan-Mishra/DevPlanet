@@ -98,12 +98,40 @@ def test_elevation_ramp_generation_with_languages() -> None:
         assert 0.0 <= node.elevation <= 1.0
         assert 0.0 <= node.oklab[0] <= 1.0
         assert node.hex.startswith("#") and len(node.hex) == 7
+        # Ensure node.oklab matches hex_to_oklab exactly
+        expected_oklab = OklabColorConverter.hex_to_oklab(node.hex)
+        assert node.oklab == expected_oklab
 
     # Verify strictly monotonic elevation stops
     elevations = [node.elevation for node in ramp]
     assert elevations == sorted(elevations)
+    assert len(elevations) == len(set(elevations))
     assert elevations[0] == 0.00
     assert elevations[-1] == 1.00
+
+
+def test_elevation_ramp_boundary_sea_levels() -> None:
+    """Verifies strictly increasing unique elevation keys at extreme boundary sea levels (0.0 and 1.0)."""
+    math_profile = MathematicalProfile(
+        shannon_entropy=0.5,
+        diurnal_phase=0.5,
+        diurnal_coherence=0.5,
+        repo_gini_index=0.5,
+        polyglot_diversity=0.5,
+    )
+    seeder = DeterministicSeeder.from_string("boundary_dev")
+
+    for sea_level in [0.0, 1.0]:
+        ramp = SurfaceMaterialEngine.generate_elevation_ramp(
+            [], math_profile, sea_level=sea_level, seeder=seeder
+        )
+        assert len(ramp) == 6
+        elevations = [node.elevation for node in ramp]
+        # Must be strictly increasing without duplicates
+        assert elevations == sorted(elevations)
+        assert len(elevations) == len(set(elevations))
+        assert elevations[0] == 0.0
+        assert elevations[-1] == 1.0
 
 
 def test_elevation_ramp_fallback_no_languages() -> None:
@@ -131,7 +159,9 @@ def test_synthesize_surface_material_genome() -> None:
     req = UserPlanetProfileRequest(
         username="spandev",
         language_summary=[
-            LanguageStat(name="Python", color="#3572A5", bytes=8000, percentage=80.0),
+            LanguageStat(
+                name="Python", color="#3572A5", bytes=8000, percentage=80.0
+            ),
             LanguageStat(name="Go", color="#00ADD8", bytes=2000, percentage=20.0),
         ],
     )
@@ -171,3 +201,40 @@ def test_synthesize_surface_material_genome() -> None:
     assert 0.0 <= material.metallic_factor <= 1.0
     assert 0.0 <= material.crystalline_facetting <= 1.0
     assert len(material.elevation_color_ramp) == 6
+
+
+def test_synthesize_surface_material_determinism() -> None:
+    """Verifies that separate seeders created from the same seed produce identical SurfaceMaterialGenomes."""
+    req = UserPlanetProfileRequest(
+        username="spandev",
+        language_summary=[
+            LanguageStat(name="Rust", color="#dea584", bytes=5000, percentage=50.0),
+            LanguageStat(name="Python", color="#3572a5", bytes=5000, percentage=50.0),
+        ],
+    )
+    math_profile = MathematicalProfile(
+        shannon_entropy=1.0,
+        diurnal_phase=0.5,
+        diurnal_coherence=0.7,
+        repo_gini_index=0.2,
+        polyglot_diversity=0.5,
+    )
+    topology = TopologyGenome(
+        base_radius=100.0,
+        sea_level=0.45,
+        max_altitude=20.0,
+        octaves=6,
+        persistence=0.5,
+        lacunarity=2.0,
+        domain_warp_frequency=0.5,
+        domain_warp_amplitude=10.0,
+        landforms=[],
+    )
+
+    seeder1 = DeterministicSeeder.from_string("reproducible_dev")
+    seeder2 = DeterministicSeeder.from_string("reproducible_dev")
+
+    mat1 = SurfaceMaterialEngine.synthesize_material(req, math_profile, topology, seeder1)
+    mat2 = SurfaceMaterialEngine.synthesize_material(req, math_profile, topology, seeder2)
+
+    assert mat1.model_dump() == mat2.model_dump()
