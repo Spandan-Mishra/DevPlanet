@@ -58,14 +58,17 @@ To maintain high code quality, test integrity, and strict isolation across layer
     *   Redis caching & async task queueing with workers (`api/internal/store/`, `cache/`, `queue/`, `worker/`).
     *   Consolidated test suites in `api/test/unit/`.
     *   CodeRabbit configuration (`.coderabbit.yaml`) & Branching strategy established.
-    *   *The Forge* Phase 1 scaffolded & contracts defined (`feat/forge-scaffold-and-contracts`).
-    *   *The Forge* Phase 2 implemented (`feat/forge-seeder-and-math-engine`):
-        - `DeterministicSeeder` (`forge/src/core/seeder.py`) with SplitMix64 PRNG and hierarchical domain forking.
-        - `MathProfileEngine` (`forge/src/engine/math_profile.py`) with vectorized Shannon entropy, Gini-Simpson polyglot diversity, 1D DFT circadian Fourier phase/coherence, and repo Gini concentration.
-        - 14 passing unit tests in `forge/test/unit/`.
+    *   *The Forge* Phase 1: Foundation & Pydantic v2 data contracts.
+    *   *The Forge* Phase 2: Deterministic Seeder (`seeder.py`) & Vectorized Math Profiling (`math_profile.py`).
+    *   *The Forge* Phase 3: Spherical Topology Engine on $S^2$ (`feat/forge-spherical-topology`):
+        - Fibonacci sphere lattice distribution with deterministic seeded organic jitter.
+        - Primary repository sifting (top 12 maximum) and plate mass weighting.
+        - Geological tectonic archetype classification (`orogenic_belt`, `shield_craton`, `volcanic_archipelago`, `rift_valley`, `oceanic_trench`).
+        - Continuous coupling of Shannon entropy to fractal octaves, sea level, and domain warping.
+        - 19 passing unit tests in `forge/test/unit/`.
 *   **Next Immediate Tasks:**
-    *   *The Forge* Phase 3: Continuous Oklab Color Space & Climate Matrix Synthesizer (`forge/src/engine/palette.py` & `climate.py`).
-    *   *The Forge* Phase 4: Spherical Topology Engine on $S^2$ (Voronoi tectonics, FBM, Ridged Multi-Fractals).
+    *   *The Forge* Phase 4: Continuous Oklab Color Space & Climate Matrix Synthesizer (`forge/src/engine/palette.py` & `climate.py`).
+    *   *The Forge* Phase 5: Celestial Mechanics (Moons, Rings) & Inhabitant Boids Ecosystem (`celestial.py`, `ecosystem.py`).
 
 ## Agent Instructions
 1. Always work within the active feature branch designated for the specific layer.
