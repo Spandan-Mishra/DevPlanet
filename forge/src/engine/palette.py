@@ -3,8 +3,13 @@ import re
 import numpy as np
 
 from src.core.seeder import DeterministicSeeder
-from src.models.genome import ElevationRampNode, MathematicalProfile
-from src.models.request import LanguageStat
+from src.models.genome import (
+    ElevationRampNode,
+    MathematicalProfile,
+    SurfaceMaterialGenome,
+    TopologyGenome,
+)
+from src.models.request import LanguageStat, UserPlanetProfileRequest
 
 
 class OklabColorConverter:
@@ -230,3 +235,108 @@ class SurfaceMaterialEngine:
             )
 
         return nodes
+
+    @classmethod
+    def synthesize_material(
+        cls,
+        request: UserPlanetProfileRequest,
+        math_profile: MathematicalProfile,
+        topology: TopologyGenome,
+        master_seeder: DeterministicSeeder,
+    ) -> SurfaceMaterialGenome:
+        """Synthesizes the complete SurfaceMaterialGenome coupling Whittaker climate and Oklab palette."""
+        material_seeder = master_seeder.fork("surface_material")
+
+        # 1. Base Temperature (°C): modulated by diurnal phase
+        # Day developers (phase ~0.7-1.0) have warmer baseline; night developers cooler
+        temp_base = float(
+            np.clip(
+                -5.0 + 25.0 * math_profile.diurnal_phase,
+                -10.0,
+                28.0,
+            )
+        )
+
+        # 2. Equator Heat and Polar Cooling gradients
+        equator_heat = float(
+            np.clip(
+                14.0 + 10.0 * math_profile.diurnal_coherence,
+                10.0,
+                26.0,
+            )
+        )
+        polar_cooling = float(
+            np.clip(
+                -30.0 + 8.0 * (1.0 - math_profile.diurnal_coherence),
+                -35.0,
+                -15.0,
+            )
+        )
+
+        # 3. Moisture Base and Ocean Evaporation
+        # Coupled to sea level and Shannon language entropy (polyglots have higher atmospheric moisture)
+        moisture_base = float(
+            np.clip(
+                0.25
+                + 0.50 * topology.sea_level
+                + 0.10 * math_profile.polyglot_diversity,
+                0.15,
+                0.90,
+            )
+        )
+        ocean_evaporation = float(
+            np.clip(
+                0.35 + 0.45 * topology.sea_level + 0.10 * (math_profile.diurnal_phase),
+                0.25,
+                0.90,
+            )
+        )
+
+        # 4. PBR Roughness Curve across 5 elevation stops:
+        # [0.0 (trench), 0.25 (shelf), 0.50 (coast/lowland), 0.75 (plateau), 1.0 (summit)]
+        # Oceanic stops are smoother; high plateaus and rocky crags are rougher
+        r_noise = material_seeder.next_float(-0.03, 0.03)
+        roughness_curve = [
+            float(np.clip(0.12 + r_noise, 0.05, 0.25)),  # Abyssal ocean bed
+            float(np.clip(0.22 + r_noise, 0.15, 0.35)),  # Submerged shelf
+            float(np.clip(0.55 + r_noise, 0.40, 0.70)),  # Lowland / vegetative
+            float(np.clip(0.78 + r_noise, 0.65, 0.90)),  # Rugged mountain crag
+            float(np.clip(0.35 + r_noise, 0.20, 0.50)),  # Glacial / crystalline summit
+        ]
+
+        # 5. Metallic Factor & Crystalline Facetting
+        # Repo resilience & star mass increase metallic sheen; diversity increases crystal facets
+        metallic_factor = float(
+            np.clip(
+                0.08 + 0.45 * (1.0 - math_profile.repo_gini_index),
+                0.05,
+                0.65,
+            )
+        )
+        crystalline_facetting = float(
+            np.clip(
+                0.15 + 0.65 * math_profile.polyglot_diversity,
+                0.10,
+                0.90,
+            )
+        )
+
+        # 6. Generate 6-stop Elevation Color Ramp
+        elevation_ramp = cls.generate_elevation_ramp(
+            request.language_summary,
+            math_profile,
+            topology.sea_level,
+            master_seeder,
+        )
+
+        return SurfaceMaterialGenome(
+            temperature_base=float(np.round(temp_base, 2)),
+            equator_heat=float(np.round(equator_heat, 2)),
+            polar_cooling=float(np.round(polar_cooling, 2)),
+            moisture_base=float(np.round(moisture_base, 4)),
+            ocean_evaporation=float(np.round(ocean_evaporation, 4)),
+            roughness_curve=[float(np.round(r, 4)) for r in roughness_curve],
+            metallic_factor=float(np.round(metallic_factor, 4)),
+            crystalline_facetting=float(np.round(crystalline_facetting, 4)),
+            elevation_color_ramp=elevation_ramp,
+        )

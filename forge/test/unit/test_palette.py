@@ -2,8 +2,13 @@ import pytest
 
 from src.core.seeder import DeterministicSeeder
 from src.engine.palette import OklabColorConverter, SurfaceMaterialEngine
-from src.models.genome import ElevationRampNode, MathematicalProfile
-from src.models.request import LanguageStat
+from src.models.genome import (
+    ElevationRampNode,
+    MathematicalProfile,
+    SurfaceMaterialGenome,
+    TopologyGenome,
+)
+from src.models.request import LanguageStat, UserPlanetProfileRequest
 
 
 def test_hex_to_srgb_parsing() -> None:
@@ -119,3 +124,50 @@ def test_elevation_ramp_fallback_no_languages() -> None:
     assert len(ramp) == 6
     assert ramp[0].elevation == 0.0
     assert ramp[-1].elevation == 1.0
+
+
+def test_synthesize_surface_material_genome() -> None:
+    """Verifies full synthesis of SurfaceMaterialGenome coupled with Whittaker climate."""
+    req = UserPlanetProfileRequest(
+        username="spandev",
+        language_summary=[
+            LanguageStat(name="Python", color="#3572A5", bytes=8000, percentage=80.0),
+            LanguageStat(name="Go", color="#00ADD8", bytes=2000, percentage=20.0),
+        ],
+    )
+    math_profile = MathematicalProfile(
+        shannon_entropy=0.72,
+        diurnal_phase=0.65,
+        diurnal_coherence=0.85,
+        repo_gini_index=0.35,
+        polyglot_diversity=0.32,
+    )
+    topology = TopologyGenome(
+        base_radius=100.0,
+        sea_level=0.48,
+        max_altitude=25.0,
+        octaves=6,
+        persistence=0.48,
+        lacunarity=2.05,
+        domain_warp_frequency=0.45,
+        domain_warp_amplitude=12.0,
+        landforms=[],
+    )
+    seeder = DeterministicSeeder.from_string("spandev")
+
+    material = SurfaceMaterialEngine.synthesize_material(
+        req, math_profile, topology, seeder
+    )
+
+    assert isinstance(material, SurfaceMaterialGenome)
+    assert -15.0 <= material.temperature_base <= 35.0
+    assert 10.0 <= material.equator_heat <= 30.0
+    assert -40.0 <= material.polar_cooling <= -10.0
+    assert 0.0 <= material.moisture_base <= 1.0
+    assert 0.0 <= material.ocean_evaporation <= 1.0
+    assert len(material.roughness_curve) == 5
+    for r in material.roughness_curve:
+        assert 0.0 <= r <= 1.0
+    assert 0.0 <= material.metallic_factor <= 1.0
+    assert 0.0 <= material.crystalline_facetting <= 1.0
+    assert len(material.elevation_color_ramp) == 6
