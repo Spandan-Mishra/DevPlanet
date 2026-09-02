@@ -36,8 +36,8 @@ To maintain high code quality, test integrity, and strict isolation across layer
   - Layers: `api`, `forge`, `canvas`, `infra`
   - Examples:
     - `feat/forge-scaffold-and-contracts`
-    - `feat/forge-deterministic-seeder`
-    - `feat/forge-terrain-generator`
+    - `feat/forge-seeder-and-math-engine`
+    - `feat/forge-spherical-topology`
     - `feat/canvas-threejs-setup`
 - **Layer Isolation:** Feature branches must strictly modify their respective layer (`api/`, `forge/`, or `canvas/`). Cross-layer changes should only occur for shared contracts or Docker Compose updates.
 
@@ -58,11 +58,14 @@ To maintain high code quality, test integrity, and strict isolation across layer
     *   Redis caching & async task queueing with workers (`api/internal/store/`, `cache/`, `queue/`, `worker/`).
     *   Consolidated test suites in `api/test/unit/`.
     *   CodeRabbit configuration (`.coderabbit.yaml`) & Branching strategy established.
-    *   Feature branch created: `feat/forge-scaffold-and-contracts`.
-    *   *The Forge* foundation scaffolded: `pyproject.toml`, FastAPI server, Pydantic v2 schemas (`UserPlanetProfileRequest`, `PlanetGenome`), and schema unit tests in `forge/test/unit/`.
+    *   *The Forge* Phase 1 scaffolded & contracts defined (`feat/forge-scaffold-and-contracts`).
+    *   *The Forge* Phase 2 implemented (`feat/forge-seeder-and-math-engine`):
+        - `DeterministicSeeder` (`forge/src/core/seeder.py`) with SplitMix64 PRNG and hierarchical domain forking.
+        - `MathProfileEngine` (`forge/src/engine/math_profile.py`) with vectorized Shannon entropy, Gini-Simpson polyglot diversity, 1D DFT circadian Fourier phase/coherence, and repo Gini concentration.
+        - 14 passing unit tests in `forge/test/unit/`.
 *   **Next Immediate Tasks:**
-    *   Build the Deterministic Seeder & SplitMix64 PRNG graph (`forge/src/core/seeder.py`).
-    *   Build the Mathematical Profiling Engine (Shannon entropy, Diurnal Fourier phase, Gini index).
+    *   *The Forge* Phase 3: Continuous Oklab Color Space & Climate Matrix Synthesizer (`forge/src/engine/palette.py` & `climate.py`).
+    *   *The Forge* Phase 4: Spherical Topology Engine on $S^2$ (Voronoi tectonics, FBM, Ridged Multi-Fractals).
 
 ## Agent Instructions
 1. Always work within the active feature branch designated for the specific layer.
