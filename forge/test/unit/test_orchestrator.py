@@ -35,7 +35,7 @@ def test_orchestrator_synthesize_planet_genome_complete() -> None:
     assert isinstance(genome, PlanetGenome)
     assert genome.meta.username == "spandev"
     assert genome.meta.version == "1.0.0"
-    assert genome.meta.master_seed.startswith("spandev_")
+    assert genome.meta.master_seed == "spandev:devplanet_v1"
 
     # Verify math profile
     assert genome.math_profile.shannon_entropy > 0.0
@@ -93,6 +93,7 @@ async def test_generate_genome_api_endpoint() -> None:
         assert response.status_code == 200
         data = response.json()
         assert data["meta"]["username"] == "octocat"
+        assert data["meta"]["masterSeed"] == "octocat:devplanet_v1"
         assert "mathProfile" in data
         assert "celestial" in data
         assert "topology" in data

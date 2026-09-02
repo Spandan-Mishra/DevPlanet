@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, status
 
 from src.engine.orchestrator import PlanetGenomeOrchestrator
@@ -15,5 +17,7 @@ router = APIRouter(prefix="/api/v1/genome", tags=["Genome Generation"])
     description="Procedurally transforms a GitHub developer ingestion payload into a complete deterministic PlanetGenome.",
 )
 async def generate_genome(request: UserPlanetProfileRequest) -> PlanetGenome:
-    """Procedurally synthesizes the complete 3D Planet Genome."""
-    return PlanetGenomeOrchestrator.synthesize_planet_genome(request)
+    """Procedurally synthesizes the complete 3D Planet Genome in a worker thread."""
+    return await asyncio.to_thread(
+        PlanetGenomeOrchestrator.synthesize_planet_genome, request
+    )

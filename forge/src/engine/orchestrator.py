@@ -64,10 +64,10 @@ class PlanetGenomeOrchestrator:
             request, math_profile, topology, surface_material, master_seeder
         )
 
-        # 8. Meta Information
+        # 8. Meta Information (stores exact material used for cryptographic seed derivation)
         meta = MetaGenome(
             username=request.username,
-            master_seed=f"{request.username}_{salt}",
+            master_seed=f"{request.username}:{salt}",
             generated_at=datetime.now(UTC).isoformat(),
             version=cls.GENOME_VERSION,
         )
