@@ -32,9 +32,7 @@ class SphericalTopologyEngine:
 
         def repo_score(r: LandformRepo) -> float:
             pinned_bonus = 100.0 if r.is_pinned else 0.0
-            return (
-                float(r.stars * 3 + r.forks * 2 + r.commit_count) + pinned_bonus
-            )
+            return float(r.stars * 3 + r.forks * 2 + r.commit_count) + pinned_bonus
 
         sorted_repos = sorted(repos, key=repo_score, reverse=True)
         return sorted_repos[: SphericalTopologyEngine.MAX_PRIMARY_LANDFORMS]
@@ -126,8 +124,7 @@ class SphericalTopologyEngine:
 
         # Calculate total mass for relative plate scaling
         masses = [
-            float(r.stars * 3 + r.forks * 2 + r.commit_count + 1)
-            for r in primary_repos
+            float(r.stars * 3 + r.forks * 2 + r.commit_count + 1) for r in primary_repos
         ]
         max_mass = max(masses) if masses else 1.0
 

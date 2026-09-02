@@ -39,6 +39,7 @@ To maintain high code quality, test integrity, and strict isolation across layer
     - `feat/forge-seeder-and-math-engine`
     - `feat/forge-spherical-topology`
     - `feat/forge-palette-and-climate`
+    - `feat/forge-celestial-and-ecosystem`
     - `feat/canvas-threejs-setup`
 - **Layer Isolation:** Feature branches must strictly modify their respective layer (`api/`, `forge/`, or `canvas/`). Cross-layer changes should only occur for shared contracts or Docker Compose updates.
 
@@ -46,8 +47,8 @@ To maintain high code quality, test integrity, and strict isolation across layer
 - Every Pull Request targeting `main` is automatically reviewed by **CodeRabbit** according to `.coderabbit.yaml`.
 - **Review Directives by Layer:**
   - **`api/` (Go):** Concurrency safety, context cancellation, goroutine leak checks, strict test placement in `api/test/`, Redis connection pooling, and GraphQL rate limit safety.
-  - **`forge/` (Python):** NumPy vectorization over raw loops, deterministic PRNG seeding, continuous climate/Oklab math, and strict test containment in `forge/test/`.
-  - **`canvas/` (TypeScript / WebGL):** GPU resource cleanup/disposal, 60 FPS main thread guarantee, draw call minimization (InstancedMesh/LOD), and pure SPA architecture (no SSR).
+  - **`forge/` (Python):** NumPy vectorization over raw loops, deterministic PRNG seeding, continuous climate/Oklab math, and strict test containment in `forge/test/`.\
+  - **`canvas/` (TypeScript / WebGL):** GPU resource cleanup/disposal, 60 FPS main thread guarantee, draw call minimization (InstancedMesh/LOD), and pure SPA architecture (no SSR).\
 - **Merge Criteria:** All critical CodeRabbit feedback and developer reviews must be resolved before merging into `main`.
 
 ## Current Status & Milestones
@@ -62,13 +63,16 @@ To maintain high code quality, test integrity, and strict isolation across layer
     *   *The Forge* Phase 1: Foundation & Pydantic v2 data contracts.
     *   *The Forge* Phase 2: Deterministic Seeder (`seeder.py`) & Vectorized Math Profiling (`math_profile.py`).
     *   *The Forge* Phase 3: Spherical Topology Engine on $S^2$ (`topology.py`).
-    *   *The Forge* Phase 4: Continuous Oklab Color Space & Climate Matrix Synthesizer (`palette.py`):
-        - `OklabColorConverter`: Exact forward/inverse transforms ($\text{sRGB} \leftrightarrow \text{Linear RGB} \leftrightarrow \text{Oklab}$) & perceptual interpolation.
-        - `SurfaceMaterialEngine.generate_elevation_ramp`: 6-stop monotonic elevation color ramp driven by primary/secondary developer languages and diurnal albedo modulation.
-        - `SurfaceMaterialEngine.synthesize_material`: Continuous Whittaker climate matrix ($T_{\text{base}}, T_{\text{equator}}, T_{\text{polar}}, M_{\text{base}}, E_{\text{ocean}}$), 5-stop PBR roughness curve, metallic factors, and crystalline facetting.
-        - 26 passing unit tests in `forge/test/unit/`.
+    *   *The Forge* Phase 4: Continuous Oklab Color Space & Climate Matrix Synthesizer (`palette.py`).
+    *   *The Forge* Chore: Strict type annotations, type-safe math utilities, pre-commit configuration, and extended Ruff/Pyright quality gates.
+    *   *The Forge* Phase 5: Celestial Mechanics, Planetary Atmosphere, Inhabitant Boids Ecosystem & Master Genome Pipeline:
+        - `CelestialMechanicsEngine` (`celestial.py`): Keplerian orbital moon systems ($1-5$ satellites), collision-free orbital tiers, and instanced asteroid dust rings.
+        - `AtmosphereEngine` (`atmosphere.py`): Continuous Rayleigh wavelength $(R, G, B)$ scattering shifted by developer language chromas, Mie particulate aerosol scattering, and cloud circulation.
+        - `EcosystemEngine` (`ecosystem.py`): Craig Reynolds (1987) flocking boid inhabitants across 3 archetypes (Avian Gliders, Pelagic Swimmers, Luminescent Wisps) and harmonic polar aurora borealis field.
+        - `PlanetGenomeOrchestrator` (`orchestrator.py`) & FastAPI endpoint `POST /api/v1/genome/generate`: End-to-end unified genome generation pipeline.
+        - 43 passing unit tests in `forge/test/unit/`.
 *   **Next Immediate Tasks:**
-    *   *The Forge* Phase 5: Celestial Mechanics (Moons, Rings) & Inhabitant Boids Ecosystem (`celestial.py`, `ecosystem.py`).
+    *   *The Canvas* Phase 1: TypeScript / React / Three.js (R3F) frontend initialization and procedural shader pipeline.
 
 ## Agent Instructions
 1. Always work within the active feature branch designated for the specific layer.
