@@ -37,9 +37,7 @@ def test_repo_filtering_and_ranking() -> None:
 def test_fibonacci_sphere_points_unit_norm() -> None:
     """Verifies that all generated Fibonacci points lie precisely on the unit sphere S^2."""
     seeder = DeterministicSeeder.from_string("octocat")
-    points = SphericalTopologyEngine._compute_fibonacci_sphere_points(
-        12, seeder
-    )
+    points = SphericalTopologyEngine._compute_fibonacci_sphere_points(12, seeder)
 
     assert len(points) == 12
     for x, y, z in points:
@@ -53,12 +51,8 @@ def test_single_landform_point_determinism_and_divergence() -> None:
     seeder_a2 = DeterministicSeeder.from_string("octocat", salt="single")
     seeder_b = DeterministicSeeder.from_string("torvalds", salt="single")
 
-    pts_a1 = SphericalTopologyEngine._compute_fibonacci_sphere_points(
-        1, seeder_a1
-    )
-    pts_a2 = SphericalTopologyEngine._compute_fibonacci_sphere_points(
-        1, seeder_a2
-    )
+    pts_a1 = SphericalTopologyEngine._compute_fibonacci_sphere_points(1, seeder_a1)
+    pts_a2 = SphericalTopologyEngine._compute_fibonacci_sphere_points(1, seeder_a2)
     pts_b = SphericalTopologyEngine._compute_fibonacci_sphere_points(1, seeder_b)
 
     assert len(pts_a1) == 1
@@ -79,12 +73,8 @@ def test_fibonacci_sphere_jitter_and_determinism() -> None:
     seeder_a2 = DeterministicSeeder.from_string("octocat", salt="2026")
     seeder_b = DeterministicSeeder.from_string("torvalds", salt="2026")
 
-    pts_a1 = SphericalTopologyEngine._compute_fibonacci_sphere_points(
-        8, seeder_a1
-    )
-    pts_a2 = SphericalTopologyEngine._compute_fibonacci_sphere_points(
-        8, seeder_a2
-    )
+    pts_a1 = SphericalTopologyEngine._compute_fibonacci_sphere_points(8, seeder_a1)
+    pts_a2 = SphericalTopologyEngine._compute_fibonacci_sphere_points(8, seeder_a2)
     pts_b = SphericalTopologyEngine._compute_fibonacci_sphere_points(8, seeder_b)
 
     # Identical seeds must yield exact same coordinates
@@ -105,10 +95,7 @@ def test_tectonic_type_classification() -> None:
     assert engine._classify_tectonic_type(shield_repo, 0.8) == "shield_craton"
 
     volcanic_repo = LandformRepo(name="hot_new_lib", stars=25, commit_count=5)
-    assert (
-        engine._classify_tectonic_type(volcanic_repo, 0.4)
-        == "volcanic_archipelago"
-    )
+    assert engine._classify_tectonic_type(volcanic_repo, 0.4) == "volcanic_archipelago"
 
     trench_repo = LandformRepo(name="empty_test", stars=0, commit_count=1)
     assert engine._classify_tectonic_type(trench_repo, 0.1) == "oceanic_trench"
@@ -119,12 +106,8 @@ def test_synthesize_topology_full_generation() -> None:
     req = UserPlanetProfileRequest(
         username="spandev",
         language_summary=[
-            LanguageStat(
-                name="Go", color="#00ADD8", bytes=6000, percentage=60.0
-            ),
-            LanguageStat(
-                name="Python", color="#3572A5", bytes=4000, percentage=40.0
-            ),
+            LanguageStat(name="Go", color="#00ADD8", bytes=6000, percentage=60.0),
+            LanguageStat(name="Python", color="#3572A5", bytes=4000, percentage=40.0),
         ],
         landforms=[
             LandformRepo(
@@ -142,9 +125,7 @@ def test_synthesize_topology_full_generation() -> None:
     math_profile = MathProfileEngine.generate_profile(req)
     seeder = DeterministicSeeder.from_string(req.username)
 
-    topology = SphericalTopologyEngine.synthesize_topology(
-        req, math_profile, seeder
-    )
+    topology = SphericalTopologyEngine.synthesize_topology(req, math_profile, seeder)
 
     assert isinstance(topology, TopologyGenome)
     assert topology.base_radius == 100.0
@@ -158,8 +139,5 @@ def test_synthesize_topology_full_generation() -> None:
     primary_plate = topology.landforms[0]
     assert primary_plate.repo_name == "devplanet"
     assert primary_plate.tectonic_type == "orogenic_belt"
-    assert (
-        primary_plate.elevation_factor
-        >= topology.landforms[2].elevation_factor
-    )
+    assert primary_plate.elevation_factor >= topology.landforms[2].elevation_factor
     assert primary_plate.plate_radius >= topology.landforms[2].plate_radius
