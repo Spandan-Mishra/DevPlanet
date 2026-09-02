@@ -31,7 +31,11 @@ class EcosystemEngine:
     ) -> InhabitantSpecies:
         """Synthesizes high-altitude atmospheric avian gliders driven by repository stars."""
         total_stars = sum(repo.stars for repo in request.landforms)
-        pop_base = 15.0 + 4.0 * math_profile.polyglot_diversity * 10.0 + min(float(total_stars) * 0.5, 80.0)
+        pop_base = (
+            15.0
+            + 4.0 * math_profile.polyglot_diversity * 10.0
+            + min(float(total_stars) * 0.5, 80.0)
+        )
         pop_jitter = seeder.next_float(-3.0, 3.0)
         population = int(clamp(pop_base + pop_jitter, 12.0, 150.0))
 
@@ -46,14 +50,24 @@ class EcosystemEngine:
         scale = clamp(1.0 + float(total_stars) / 200.0, 0.8, 2.5)
 
         physics = BoidPhysics(
-            max_speed=round_to(clamp(6.0 + 3.0 * math_profile.diurnal_coherence, 4.5, 9.5), 3),
-            max_force=round_to(clamp(0.25 + 0.15 * math_profile.repo_gini_index, 0.15, 0.45), 3),
+            max_speed=round_to(
+                clamp(6.0 + 3.0 * math_profile.diurnal_coherence, 4.5, 9.5), 3
+            ),
+            max_force=round_to(
+                clamp(0.25 + 0.15 * math_profile.repo_gini_index, 0.15, 0.45), 3
+            ),
             separation_dist=round_to(clamp(8.0 + 4.0 * scale, 6.0, 16.0), 2),
             neighbor_radius=round_to(clamp(25.0 + 10.0 * scale, 18.0, 45.0), 2),
-            cohesion_weight=round_to(clamp(1.0 + 0.5 * math_profile.diurnal_coherence, 0.8, 1.8), 3),
-            alignment_weight=round_to(clamp(1.2 + 0.4 * (1.0 - math_profile.repo_gini_index), 0.9, 1.9), 3),
+            cohesion_weight=round_to(
+                clamp(1.0 + 0.5 * math_profile.diurnal_coherence, 0.8, 1.8), 3
+            ),
+            alignment_weight=round_to(
+                clamp(1.2 + 0.4 * (1.0 - math_profile.repo_gini_index), 0.9, 1.9), 3
+            ),
             separation_weight=round_to(clamp(1.5 + 0.5 * scale, 1.2, 2.4), 3),
-            terrain_avoidance_altitude=round_to(clamp(20.0 + 10.0 * math_profile.shannon_entropy, 18.0, 38.0), 2),
+            terrain_avoidance_altitude=round_to(
+                clamp(20.0 + 10.0 * math_profile.shannon_entropy, 18.0, 38.0), 2
+            ),
         )
 
         return InhabitantSpecies(
@@ -63,7 +77,9 @@ class EcosystemEngine:
             scale=round_to(scale, 2),
             boid_physics=physics,
             bioluminescence_color=color,
-            pulse_frequency=round_to(clamp(0.8 + 0.6 * math_profile.diurnal_phase, 0.5, 2.0), 3),
+            pulse_frequency=round_to(
+                clamp(0.8 + 0.6 * math_profile.diurnal_phase, 0.5, 2.0), 3
+            ),
         )
 
     @classmethod
@@ -80,7 +96,9 @@ class EcosystemEngine:
             return None
 
         total_forks = sum(repo.forks for repo in request.landforms)
-        pop_base = 10.0 + min(float(total_forks) * 0.8, 70.0) + (topology.sea_level * 25.0)
+        pop_base = (
+            10.0 + min(float(total_forks) * 0.8, 70.0) + (topology.sea_level * 25.0)
+        )
         pop_jitter = seeder.next_float(-2.0, 2.0)
         population = int(clamp(pop_base + pop_jitter, 8.0, 120.0))
 
@@ -95,14 +113,24 @@ class EcosystemEngine:
         scale = clamp(0.9 + float(total_forks) / 150.0, 0.7, 2.2)
 
         physics = BoidPhysics(
-            max_speed=round_to(clamp(3.5 + 2.0 * math_profile.diurnal_coherence, 2.5, 6.0), 3),
-            max_force=round_to(clamp(0.18 + 0.10 * math_profile.repo_gini_index, 0.10, 0.35), 3),
+            max_speed=round_to(
+                clamp(3.5 + 2.0 * math_profile.diurnal_coherence, 2.5, 6.0), 3
+            ),
+            max_force=round_to(
+                clamp(0.18 + 0.10 * math_profile.repo_gini_index, 0.10, 0.35), 3
+            ),
             separation_dist=round_to(clamp(6.0 + 3.0 * scale, 5.0, 12.0), 2),
             neighbor_radius=round_to(clamp(18.0 + 8.0 * scale, 14.0, 32.0), 2),
-            cohesion_weight=round_to(clamp(1.4 + 0.4 * math_profile.diurnal_coherence, 1.0, 2.0), 3),
-            alignment_weight=round_to(clamp(1.3 + 0.3 * (1.0 - math_profile.repo_gini_index), 1.0, 1.8), 3),
+            cohesion_weight=round_to(
+                clamp(1.4 + 0.4 * math_profile.diurnal_coherence, 1.0, 2.0), 3
+            ),
+            alignment_weight=round_to(
+                clamp(1.3 + 0.3 * (1.0 - math_profile.repo_gini_index), 1.0, 1.8), 3
+            ),
             separation_weight=round_to(clamp(1.4 + 0.3 * scale, 1.1, 2.0), 3),
-            terrain_avoidance_altitude=round_to(clamp(3.0 + 4.0 * topology.sea_level, 2.5, 8.0), 2),
+            terrain_avoidance_altitude=round_to(
+                clamp(3.0 + 4.0 * topology.sea_level, 2.5, 8.0), 2
+            ),
         )
 
         return InhabitantSpecies(
@@ -112,7 +140,9 @@ class EcosystemEngine:
             scale=round_to(scale, 2),
             boid_physics=physics,
             bioluminescence_color=color,
-            pulse_frequency=round_to(clamp(0.4 + 0.4 * math_profile.diurnal_phase, 0.3, 1.4), 3),
+            pulse_frequency=round_to(
+                clamp(0.4 + 0.4 * math_profile.diurnal_phase, 0.3, 1.4), 3
+            ),
         )
 
     @classmethod
@@ -123,8 +153,14 @@ class EcosystemEngine:
         seeder: DeterministicSeeder,
     ) -> InhabitantSpecies:
         """Synthesizes ground/lowland crystalline roamers driven by PRs and code activity."""
-        activity_mass = float(request.total_prs + request.total_issues + request.total_reviews)
-        pop_base = 20.0 + min(activity_mass * 0.7, 80.0) + (math_profile.polyglot_diversity * 30.0)
+        activity_mass = float(
+            request.total_prs + request.total_issues + request.total_reviews
+        )
+        pop_base = (
+            20.0
+            + min(activity_mass * 0.7, 80.0)
+            + (math_profile.polyglot_diversity * 30.0)
+        )
         pop_jitter = seeder.next_float(-3.0, 3.0)
         population = int(clamp(pop_base + pop_jitter, 15.0, 160.0))
 
@@ -134,14 +170,24 @@ class EcosystemEngine:
         scale = clamp(0.6 + activity_mass / 200.0, 0.5, 1.8)
 
         physics = BoidPhysics(
-            max_speed=round_to(clamp(4.0 + 2.5 * math_profile.diurnal_coherence, 3.0, 7.5), 3),
-            max_force=round_to(clamp(0.30 + 0.15 * math_profile.repo_gini_index, 0.20, 0.50), 3),
+            max_speed=round_to(
+                clamp(4.0 + 2.5 * math_profile.diurnal_coherence, 3.0, 7.5), 3
+            ),
+            max_force=round_to(
+                clamp(0.30 + 0.15 * math_profile.repo_gini_index, 0.20, 0.50), 3
+            ),
             separation_dist=round_to(clamp(5.0 + 3.0 * scale, 4.0, 10.0), 2),
             neighbor_radius=round_to(clamp(15.0 + 6.0 * scale, 12.0, 26.0), 2),
-            cohesion_weight=round_to(clamp(1.1 + 0.3 * math_profile.diurnal_coherence, 0.9, 1.6), 3),
-            alignment_weight=round_to(clamp(1.1 + 0.3 * (1.0 - math_profile.repo_gini_index), 0.8, 1.6), 3),
+            cohesion_weight=round_to(
+                clamp(1.1 + 0.3 * math_profile.diurnal_coherence, 0.9, 1.6), 3
+            ),
+            alignment_weight=round_to(
+                clamp(1.1 + 0.3 * (1.0 - math_profile.repo_gini_index), 0.8, 1.6), 3
+            ),
             separation_weight=round_to(clamp(1.8 + 0.4 * scale, 1.4, 2.5), 3),
-            terrain_avoidance_altitude=round_to(clamp(4.0 + 3.0 * math_profile.polyglot_diversity, 3.0, 9.0), 2),
+            terrain_avoidance_altitude=round_to(
+                clamp(4.0 + 3.0 * math_profile.polyglot_diversity, 3.0, 9.0), 2
+            ),
         )
 
         return InhabitantSpecies(
@@ -151,7 +197,9 @@ class EcosystemEngine:
             scale=round_to(scale, 2),
             boid_physics=physics,
             bioluminescence_color=color,
-            pulse_frequency=round_to(clamp(1.0 + 1.2 * math_profile.diurnal_phase, 0.8, 2.5), 3),
+            pulse_frequency=round_to(
+                clamp(1.0 + 1.2 * math_profile.diurnal_phase, 0.8, 2.5), 3
+            ),
         )
 
     @classmethod
@@ -170,16 +218,22 @@ class EcosystemEngine:
         species_list: list[InhabitantSpecies] = []
 
         # Avian species (always present)
-        avian = cls._synthesize_avian_species(request, math_profile, eco_seeder.fork("avian"))
+        avian = cls._synthesize_avian_species(
+            request, math_profile, eco_seeder.fork("avian")
+        )
         species_list.append(avian)
 
         # Pelagic species (if aquatic bodies exist)
-        pelagic = cls._synthesize_pelagic_species(request, math_profile, topology, eco_seeder.fork("pelagic"))
+        pelagic = cls._synthesize_pelagic_species(
+            request, math_profile, topology, eco_seeder.fork("pelagic")
+        )
         if pelagic is not None:
             species_list.append(pelagic)
 
         # Luminescent wisps (always present)
-        wisp = cls._synthesize_wisp_species(request, math_profile, eco_seeder.fork("wisp"))
+        wisp = cls._synthesize_wisp_species(
+            request, math_profile, eco_seeder.fork("wisp")
+        )
         species_list.append(wisp)
 
         # 2. Planetary Aurora Borealis Field

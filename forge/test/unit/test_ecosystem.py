@@ -53,7 +53,9 @@ def test_synthesize_ecosystem_full() -> None:
             LandformRepo(name="web_ui", stars=40, forks=12, commit_count=80),
         ],
         language_summary=[
-            LanguageStat(name="TypeScript", color="#3178C6", bytes=8000, percentage=80.0),
+            LanguageStat(
+                name="TypeScript", color="#3178C6", bytes=8000, percentage=80.0
+            ),
             LanguageStat(name="Rust", color="#dea584", bytes=2000, percentage=20.0),
         ],
     )
@@ -68,7 +70,9 @@ def test_synthesize_ecosystem_full() -> None:
     surface_mat = _sample_surface_material()
     seeder = DeterministicSeeder.from_string("ecosystem_dev")
 
-    eco = EcosystemEngine.synthesize_ecosystem(req, math_profile, topology, surface_mat, seeder)
+    eco = EcosystemEngine.synthesize_ecosystem(
+        req, math_profile, topology, surface_mat, seeder
+    )
 
     assert isinstance(eco, EcosystemGenome)
     assert len(eco.species) == 3
@@ -116,7 +120,9 @@ def test_ecosystem_low_sea_level_skips_pelagic() -> None:
     surface_mat = _sample_surface_material()
     seeder = DeterministicSeeder.from_string("arid_dev")
 
-    eco = EcosystemEngine.synthesize_ecosystem(req, math_profile, topology, surface_mat, seeder)
+    eco = EcosystemEngine.synthesize_ecosystem(
+        req, math_profile, topology, surface_mat, seeder
+    )
 
     types = [s.type for s in eco.species]
     assert "avian_glider" in types
@@ -143,7 +149,11 @@ def test_ecosystem_determinism() -> None:
     seeder_1 = DeterministicSeeder.from_string("eco_seed")
     seeder_2 = DeterministicSeeder.from_string("eco_seed")
 
-    e1 = EcosystemEngine.synthesize_ecosystem(req, math_profile, topology, surface_mat, seeder_1)
-    e2 = EcosystemEngine.synthesize_ecosystem(req, math_profile, topology, surface_mat, seeder_2)
+    e1 = EcosystemEngine.synthesize_ecosystem(
+        req, math_profile, topology, surface_mat, seeder_1
+    )
+    e2 = EcosystemEngine.synthesize_ecosystem(
+        req, math_profile, topology, surface_mat, seeder_2
+    )
 
     assert e1.model_dump() == e2.model_dump()

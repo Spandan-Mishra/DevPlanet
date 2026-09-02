@@ -37,7 +37,9 @@ class CelestialMechanicsEngine:
             return []
 
         # Determine number of moons: 1 to MAX_MOONS based on external collaboration
-        num_moons = int(clamp(float(1 + external_impact // 15), 1.0, float(cls.MAX_MOONS)))
+        num_moons = int(
+            clamp(float(1 + external_impact // 15), 1.0, float(cls.MAX_MOONS))
+        )
         moon_seeder = seeder.fork("celestial_moons")
 
         # Color palette choices for moons (silicate rock, icy quartz, metallic iron, obsidian)
@@ -57,7 +59,9 @@ class CelestialMechanicsEngine:
 
             # Moon radius: 4.0 to 14.0
             radius_jitter = sub_seeder.next_float(-1.5, 2.5)
-            moon_radius = clamp(6.0 + (external_impact / 50.0) + radius_jitter, 4.0, 14.0)
+            moon_radius = clamp(
+                6.0 + (external_impact / 50.0) + radius_jitter, 4.0, 14.0
+            )
 
             # Orbit radius: tiered progression so orbits never collide
             orbit_step = 35.0 + sub_seeder.next_float(5.0, 18.0)
@@ -65,7 +69,9 @@ class CelestialMechanicsEngine:
 
             # Kepler's 3rd Law approximation: v ~ 1 / sqrt(r)
             keplerian_speed = 1.25 / math.sqrt(orbit_dist / cls.PLANET_RADIUS)
-            orbit_speed = clamp(keplerian_speed * sub_seeder.next_float(0.85, 1.15), 0.15, 1.20)
+            orbit_speed = clamp(
+                keplerian_speed * sub_seeder.next_float(0.85, 1.15), 0.15, 1.20
+            )
 
             # Orbital plane inclination in radians: [0.02, 0.45] (~1 deg to 26 deg)
             inclination = clamp(
@@ -76,7 +82,9 @@ class CelestialMechanicsEngine:
 
             # Crater density: [0.15, 0.90] (higher for older accounts and lower repo resilience)
             crater_density = clamp(
-                0.35 + 0.35 * (1.0 - math_profile.repo_gini_index) + sub_seeder.next_float(-0.08, 0.08),
+                0.35
+                + 0.35 * (1.0 - math_profile.repo_gini_index)
+                + sub_seeder.next_float(-0.08, 0.08),
                 0.15,
                 0.90,
             )
@@ -123,8 +131,12 @@ class CelestialMechanicsEngine:
             )
 
         # Ring geometry
-        inner_radius = cls.PLANET_RADIUS * clamp(1.35 + ring_seeder.next_float(-0.05, 0.05), 1.25, 1.45)
-        ring_width = cls.PLANET_RADIUS * clamp(0.40 + 0.30 * math_profile.polyglot_diversity, 0.30, 0.85)
+        inner_radius = cls.PLANET_RADIUS * clamp(
+            1.35 + ring_seeder.next_float(-0.05, 0.05), 1.25, 1.45
+        )
+        ring_width = cls.PLANET_RADIUS * clamp(
+            0.40 + 0.30 * math_profile.polyglot_diversity, 0.30, 0.85
+        )
         outer_radius = inner_radius + ring_width
 
         # Particle density and count: 800 to 4500 particles for WebGL instancing
@@ -137,7 +149,9 @@ class CelestialMechanicsEngine:
             top_color = request.language_summary[0].color
             L, a, b = OklabColorConverter.hex_to_oklab(top_color)
             # Desaturate slightly for celestial icy dust appearance
-            ring_tint = OklabColorConverter.oklab_to_hex(clamp(L + 0.15, 0.55, 0.88), a * 0.5, b * 0.5)
+            ring_tint = OklabColorConverter.oklab_to_hex(
+                clamp(L + 0.15, 0.55, 0.88), a * 0.5, b * 0.5
+            )
         else:
             ring_tint = "#c8d6e5"
 

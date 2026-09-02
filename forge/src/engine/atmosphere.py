@@ -51,15 +51,23 @@ class AtmosphereEngine:
 
             # Modulate baseline Rayleigh scattering by chromatic signature
             # Higher red in language increases red rayleigh; higher blue increases blue
-            rayleigh_r = clamp(cls.BASE_RAYLEIGH[0] * (0.6 + 0.8 * r_lin), 0.0020, 0.0250)
-            rayleigh_g = clamp(cls.BASE_RAYLEIGH[1] * (0.6 + 0.8 * g_lin), 0.0050, 0.0300)
-            rayleigh_b = clamp(cls.BASE_RAYLEIGH[2] * (0.6 + 0.8 * b_lin), 0.0100, 0.0550)
+            rayleigh_r = clamp(
+                cls.BASE_RAYLEIGH[0] * (0.6 + 0.8 * r_lin), 0.0020, 0.0250
+            )
+            rayleigh_g = clamp(
+                cls.BASE_RAYLEIGH[1] * (0.6 + 0.8 * g_lin), 0.0050, 0.0300
+            )
+            rayleigh_b = clamp(
+                cls.BASE_RAYLEIGH[2] * (0.6 + 0.8 * b_lin), 0.0100, 0.0550
+            )
         else:
             rayleigh_r, rayleigh_g, rayleigh_b = cls.BASE_RAYLEIGH
 
         # 3. Mie Aerosol Scattering & Directional Asymmetry (g)
         # Particulate density rises with landmass roughness and repository concentration
-        roughness_avg = sum(surface_material.roughness_curve) / len(surface_material.roughness_curve)
+        roughness_avg = sum(surface_material.roughness_curve) / len(
+            surface_material.roughness_curve
+        )
         mie_base = 0.002 + 0.010 * roughness_avg
         mie_jitter = atmos_seeder.next_float(-0.001, 0.001)
         mie_coeff = clamp(mie_base + mie_jitter, 0.001, 0.020)
