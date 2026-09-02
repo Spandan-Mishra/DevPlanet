@@ -159,9 +159,7 @@ def test_synthesize_surface_material_genome() -> None:
     req = UserPlanetProfileRequest(
         username="spandev",
         language_summary=[
-            LanguageStat(
-                name="Python", color="#3572A5", bytes=8000, percentage=80.0
-            ),
+            LanguageStat(name="Python", color="#3572A5", bytes=8000, percentage=80.0),
             LanguageStat(name="Go", color="#00ADD8", bytes=2000, percentage=20.0),
         ],
     )
@@ -234,7 +232,11 @@ def test_synthesize_surface_material_determinism() -> None:
     seeder1 = DeterministicSeeder.from_string("reproducible_dev")
     seeder2 = DeterministicSeeder.from_string("reproducible_dev")
 
-    mat1 = SurfaceMaterialEngine.synthesize_material(req, math_profile, topology, seeder1)
-    mat2 = SurfaceMaterialEngine.synthesize_material(req, math_profile, topology, seeder2)
+    mat1 = SurfaceMaterialEngine.synthesize_material(
+        req, math_profile, topology, seeder1
+    )
+    mat2 = SurfaceMaterialEngine.synthesize_material(
+        req, math_profile, topology, seeder2
+    )
 
     assert mat1.model_dump() == mat2.model_dump()
