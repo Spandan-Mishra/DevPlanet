@@ -32,7 +32,9 @@ class SphericalTopologyEngine:
 
         def repo_score(r: LandformRepo) -> float:
             pinned_bonus = 100.0 if r.is_pinned else 0.0
-            return float(r.stars * 3 + r.forks * 2 + r.commit_count) + pinned_bonus
+            return (
+                float(r.stars * 3 + r.forks * 2 + r.commit_count) + pinned_bonus
+            )
 
         sorted_repos = sorted(repos, key=repo_score, reverse=True)
         return sorted_repos[: SphericalTopologyEngine.MAX_PRIMARY_LANDFORMS]
@@ -124,7 +126,8 @@ class SphericalTopologyEngine:
 
         # Calculate total mass for relative plate scaling
         masses = [
-            float(r.stars * 3 + r.forks * 2 + r.commit_count + 1) for r in primary_repos
+            float(r.stars * 3 + r.forks * 2 + r.commit_count + 1)
+            for r in primary_repos
         ]
         max_mass = max(masses) if masses else 1.0
 
@@ -140,7 +143,7 @@ class SphericalTopologyEngine:
             )
             resilience = clamp(impact_score / (impact_score + 25.0), 0.1, 1.0)
 
-            # Plate radius in radians on S^2: [0.20, 0.85]
+            # Plate radius in radians on S^2: [0.15, 0.85]
             # Higher mass = wider continental plate
             base_radius = 0.25 + 0.50 * math.sqrt(mass_ratio)
             plate_radius = clamp(base_radius, 0.15, 0.85)
@@ -197,7 +200,9 @@ class SphericalTopologyEngine:
         warp_freq = clamp(0.35 + 0.40 * math_profile.polyglot_diversity, 0.20, 1.20)
         warp_amp = clamp(8.0 + 12.0 * math_profile.polyglot_diversity, 4.0, 25.0)
 
-        # 4. Sea Level [0.35, 0.65]
+        # 4. Sea Level [0.30, 0.68]
+        # Low entropy = Pangaea supercontinent (lower sea level)
+        # High entropy = Archipelago chain (higher sea level)
         sea_level = clamp(0.38 + 0.12 * entropy, 0.30, 0.68)
 
         # 5. Planetary Altitude & Radius
