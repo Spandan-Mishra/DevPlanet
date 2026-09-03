@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { AsteroidRings } from '@/components/canvas/AsteroidRings'
@@ -24,11 +24,25 @@ export function PlanetCore() {
     [topology, surfaceMaterial]
   )
 
+  // Dispose previous terrain shader material on dependency change or unmount
+  useEffect(() => {
+    return () => {
+      terrainMaterial.dispose()
+    }
+  }, [terrainMaterial])
+
   // Memoize custom Rayleigh/Mie atmospheric rim glow ShaderMaterial
   const atmosphereMaterial = useMemo(
     () => (atmosphere.hasAtmosphere ? createAtmosphereMaterial(atmosphere) : null),
     [atmosphere]
   )
+
+  // Dispose previous atmosphere shader material on change or unmount
+  useEffect(() => {
+    return () => {
+      atmosphereMaterial?.dispose()
+    }
+  }, [atmosphereMaterial])
 
   // Convert unit norm S^2 plate centers to 3D surface coordinates (R = 100 + elevation)
   const landformMarkers = useMemo(() => {
@@ -86,7 +100,7 @@ export function PlanetCore() {
           receiveShadow
           material={terrainMaterial}
         >
-          <icosahedronGeometry args={[topology.baseRadius, 64]} />
+          <icosahedronGeometry args={[topology.baseRadius, 24]} />
         </mesh>
 
         {/* Ocean Surface Layer */}
