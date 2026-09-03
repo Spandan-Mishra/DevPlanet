@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
+import { createAtmosphereMaterial } from '@/shaders/atmosphereShader'
 import { createTerrainMaterial } from '@/shaders/terrainShader'
 import { usePlanetStore } from '@/store/planetStore'
 import type { LandformNode } from '@/types/genome'
@@ -15,12 +16,18 @@ export function PlanetCore() {
   const setHoveredLandform = usePlanetStore((state) => state.setHoveredLandform)
   const setSelectedLandform = usePlanetStore((state) => state.setSelectedLandform)
 
-  const { celestial, topology, surfaceMaterial } = genome
+  const { celestial, topology, surfaceMaterial, atmosphere } = genome
 
   // Memoize custom GPU procedural terrain ShaderMaterial
   const terrainMaterial = useMemo(
     () => createTerrainMaterial(topology, surfaceMaterial),
     [topology, surfaceMaterial]
+  )
+
+  // Memoize custom Rayleigh/Mie atmospheric rim glow ShaderMaterial
+  const atmosphereMaterial = useMemo(
+    () => (atmosphere.hasAtmosphere ? createAtmosphereMaterial(atmosphere) : null),
+    [atmosphere]
   )
 
   // Convert unit norm S^2 plate centers to 3D surface coordinates (R = 100 + elevation)
@@ -102,6 +109,15 @@ export function PlanetCore() {
             opacity={0.88}
           />
         </mesh>
+
+        {/* Rayleigh & Mie Atmospheric Halo Glow Shell */}
+        {atmosphere.hasAtmosphere && atmosphereMaterial && (
+          <mesh material={atmosphereMaterial}>
+            <sphereGeometry
+              args={[topology.baseRadius * 1.15, 64, 64]}
+            />
+          </mesh>
+        )}
 
         {/* Landform Repository Markers */}
         {landformMarkers.map(({ landform, position }) => (
