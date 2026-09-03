@@ -105,10 +105,11 @@ export function AsteroidRings({ rings }: AsteroidRingsProps) {
 
   return (
     <group rotation={[Math.PI / 2 + 0.1, 0, 0]}>
-      {/* 1. Instanced 3D Asteroid Debris Rocks */}
+      {/* 1. Instanced 3D Asteroid Debris Rocks (frustumCulled={false} keeps dynamic orbit visible) */}
       <instancedMesh
         ref={instancedMeshRef}
         args={[undefined, undefined, particleCount]}
+        frustumCulled={false}
         castShadow
         receiveShadow
       >
