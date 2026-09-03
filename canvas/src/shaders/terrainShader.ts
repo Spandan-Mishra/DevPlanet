@@ -41,12 +41,10 @@ uniform int uLandformCount;
 
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
-varying vec3 vOriginalPosition;
 varying float vElevation; // Normalized [0.0, 1.0]
 
 void main() {
   vec3 unitPos = normalize(position);
-  vOriginalPosition = position;
 
   // 1. Base Fractal Brownian Motion Terrain Noise
   float baseNoise = fbm(
@@ -126,7 +124,7 @@ vec3 evaluateElevationRamp(float elevation) {
     }
   }
 
-  return uElevationRamp[uRampStopsCount - 1].xyz;
+  return uElevationRamp[min(uRampStopsCount - 1, 5)].xyz;
 }
 
 void main() {
@@ -151,6 +149,9 @@ void main() {
   vec3 finalColor = albedo * (uAmbientLight + diffuse) + specular;
 
   gl_FragColor = vec4(finalColor, 1.0);
+
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `
 
@@ -182,13 +183,28 @@ export function createTerrainMaterial(
     }
   }
 
-  // Parse 6-stop elevation color ramp
-  const elevationRamp: THREE.Vector4[] = surfaceMaterial.elevationColorRamp.map(
+  // Normalize elevation color ramp to exactly 6 uniform slots
+  const rawRamp = surfaceMaterial.elevationColorRamp || []
+  const safeStops: ElevationRampNode[] = []
+  if (rawRamp.length === 0) {
+    safeStops.push({ elevation: 0.0, oklab: [0.5, 0, 0], hex: '#334455' })
+  } else {
+    for (let i = 0; i < Math.min(rawRamp.length, 6); i++) {
+      safeStops.push(rawRamp[i])
+    }
+  }
+  const lastStop = safeStops[safeStops.length - 1]
+  while (safeStops.length < 6) {
+    safeStops.push({ ...lastStop })
+  }
+
+  const elevationRamp: THREE.Vector4[] = safeStops.map(
     (stop: ElevationRampNode) => {
       const color = new THREE.Color(stop.hex)
       return new THREE.Vector4(color.r, color.g, color.b, stop.elevation)
     }
   )
+  const rampStopsCount = Math.max(1, Math.min(rawRamp.length, 6))
 
   const uniforms: TerrainUniforms = {
     uBaseRadius: { value: topology.baseRadius },
@@ -203,7 +219,7 @@ export function createTerrainMaterial(
     uLandformParams: { value: landformParams },
     uLandformCount: { value: topology.landforms.length },
     uElevationRamp: { value: elevationRamp },
-    uRampStopsCount: { value: elevationRamp.length },
+    uRampStopsCount: { value: rampStopsCount },
     uSunDirection: { value: new THREE.Vector3(500, 200, 300).normalize() },
     uAmbientLight: { value: new THREE.Color('#3a4b5c') },
     uSunColor: { value: new THREE.Color('#ffffff') },

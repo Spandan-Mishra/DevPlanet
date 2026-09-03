@@ -71,6 +71,9 @@ void main() {
   float alpha = clamp(opticalDensity * (0.6 + NdotL * 0.4), 0.0, 0.95);
 
   gl_FragColor = vec4(finalAtmosphere, alpha);
+
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `
 
