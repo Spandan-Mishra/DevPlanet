@@ -1,6 +1,7 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
+import { createTerrainMaterial } from '@/shaders/terrainShader'
 import { usePlanetStore } from '@/store/planetStore'
 import type { LandformNode } from '@/types/genome'
 
@@ -16,15 +17,25 @@ export function PlanetCore() {
 
   const { celestial, topology, surfaceMaterial } = genome
 
-  // Convert unit norm S^2 plate centers to 3D surface coordinates (R = 100)
-  const landformMarkers = topology.landforms.map((landform) => {
-    const [nx, ny, nz] = landform.plateCenter
-    const r = topology.baseRadius * (1.0 + landform.elevationFactor * 0.04)
-    return {
-      landform,
-      position: [nx * r, ny * r, nz * r] as [number, number, number],
-    }
-  })
+  // Memoize custom GPU procedural terrain ShaderMaterial
+  const terrainMaterial = useMemo(
+    () => createTerrainMaterial(topology, surfaceMaterial),
+    [topology, surfaceMaterial]
+  )
+
+  // Convert unit norm S^2 plate centers to 3D surface coordinates (R = 100 + elevation)
+  const landformMarkers = useMemo(() => {
+    return topology.landforms.map((landform) => {
+      const [nx, ny, nz] = landform.plateCenter
+      const elevationOffset =
+        topology.maxAltitude * Math.min(1.0, landform.elevationFactor * 0.4)
+      const r = topology.baseRadius + elevationOffset
+      return {
+        landform,
+        position: [nx * r, ny * r, nz * r] as [number, number, number],
+      }
+    })
+  }, [topology])
 
   // Animation frame: planet rotation, moon orbits, axial tilt
   useFrame((_, delta) => {
@@ -41,7 +52,6 @@ export function PlanetCore() {
     landform: LandformNode
   ) => {
     e.stopPropagation()
-    // Calculate 2D screen coordinates
     const screenPos = { x: e.clientX, y: e.clientY }
     setHoveredLandform(landform, screenPos)
   }
@@ -66,25 +76,28 @@ export function PlanetCore() {
     >
       {/* 1. Main Rotating Planetary Body */}
       <group ref={planetGroupRef}>
-        {/* Procedural Planet Mesh */}
-        <mesh castShadow receiveShadow>
-          <sphereGeometry args={[topology.baseRadius, 64, 64]} />
-          <meshStandardMaterial
-            color={surfaceMaterial.elevationColorRamp[2]?.hex || '#1a5276'}
-            roughness={0.7}
-            metalness={surfaceMaterial.metallicFactor}
-          />
+        {/* Procedural GPU Terrain Mesh with FBM Elevation Displacement */}
+        <mesh
+          castShadow
+          receiveShadow
+          material={terrainMaterial}
+        >
+          <icosahedronGeometry args={[topology.baseRadius, 64]} />
         </mesh>
 
-        {/* Ocean Surface Layer (small positive offset to prevent z-fighting across seaLevel bounds) */}
+        {/* Ocean Surface Layer */}
         <mesh>
           <sphereGeometry
-            args={[topology.baseRadius * (1.002 + topology.seaLevel * 0.02), 48, 48]}
+            args={[
+              topology.baseRadius * (1.002 + topology.seaLevel * 0.015),
+              64,
+              64,
+            ]}
           />
           <meshStandardMaterial
             color={surfaceMaterial.elevationColorRamp[0]?.hex || '#0a192f'}
-            roughness={0.15}
-            metalness={0.8}
+            roughness={0.12}
+            metalness={0.85}
             transparent
             opacity={0.88}
           />
@@ -99,22 +112,22 @@ export function PlanetCore() {
               onPointerOut={handlePointerOut}
               onClick={(e) => handleClick(e, landform)}
             >
-              <sphereGeometry args={[6.5, 16, 16]} />
+              <sphereGeometry args={[7.0, 16, 16]} />
               <meshBasicMaterial
                 color="#ffffff"
                 wireframe
                 transparent
-                opacity={0.35}
+                opacity={0.3}
               />
             </mesh>
 
             {/* Glowing Beacon Core */}
             <mesh>
-              <sphereGeometry args={[2.2, 12, 12]} />
+              <sphereGeometry args={[2.5, 12, 12]} />
               <meshStandardMaterial
                 color="#00ffcc"
                 emissive="#00ffcc"
-                emissiveIntensity={1.8}
+                emissiveIntensity={2.0}
               />
             </mesh>
           </group>
