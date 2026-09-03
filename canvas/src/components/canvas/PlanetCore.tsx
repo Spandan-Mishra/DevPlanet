@@ -1,6 +1,8 @@
 import { useMemo, useRef } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
+import { AsteroidRings } from '@/components/canvas/AsteroidRings'
+import { KeplerianMoons } from '@/components/canvas/KeplerianMoons'
 import { createAtmosphereMaterial } from '@/shaders/atmosphereShader'
 import { createTerrainMaterial } from '@/shaders/terrainShader'
 import { usePlanetStore } from '@/store/planetStore'
@@ -8,8 +10,6 @@ import type { LandformNode } from '@/types/genome'
 
 export function PlanetCore() {
   const planetGroupRef = useRef<THREE.Group>(null)
-  const ringsRef = useRef<THREE.Mesh>(null)
-  const moonsGroupRef = useRef<THREE.Group>(null)
 
   const genome = usePlanetStore((state) => state.genome)
   const autoRotate = usePlanetStore((state) => state.autoRotate)
@@ -44,13 +44,10 @@ export function PlanetCore() {
     })
   }, [topology])
 
-  // Animation frame: planet rotation, moon orbits, axial tilt
+  // Animation frame: planet rotation around axial tilt
   useFrame((_, delta) => {
     if (planetGroupRef.current && autoRotate) {
       planetGroupRef.current.rotation.y += delta * celestial.rotationSpeed * 0.5
-    }
-    if (moonsGroupRef.current) {
-      moonsGroupRef.current.rotation.y += delta * 0.15
     }
   })
 
@@ -150,48 +147,13 @@ export function PlanetCore() {
         ))}
       </group>
 
-      {/* 2. Planetary Asteroid Rings */}
+      {/* 2. Instanced Planetary Asteroid Dust Rings */}
       {celestial.rings.enabled && (
-        <mesh
-          ref={ringsRef}
-          rotation={[Math.PI / 2 + 0.1, 0, 0]}
-          position={[0, 0, 0]}
-        >
-          <ringGeometry
-            args={[
-              celestial.rings.innerRadius,
-              celestial.rings.outerRadius,
-              64,
-            ]}
-          />
-          <meshStandardMaterial
-            color={celestial.rings.tint}
-            side={THREE.DoubleSide}
-            transparent
-            opacity={celestial.rings.density * 0.75}
-            roughness={0.8}
-          />
-        </mesh>
+        <AsteroidRings rings={celestial.rings} />
       )}
 
-      {/* 3. Orbiting Keplerian Moons */}
-      <group ref={moonsGroupRef}>
-        {celestial.moons.map((moon) => (
-          <group
-            key={moon.id}
-            rotation={[moon.inclination, 0, 0]}
-          >
-            <mesh position={[moon.orbitRadius, 0, 0]}>
-              <sphereGeometry args={[moon.radius, 24, 24]} />
-              <meshStandardMaterial
-                color={moon.color}
-                roughness={0.85}
-                metalness={0.1}
-              />
-            </mesh>
-          </group>
-        ))}
-      </group>
+      {/* 3. Orbiting Keplerian Moons with Orbital Traces */}
+      <KeplerianMoons moons={celestial.moons} />
     </group>
   )
 }
