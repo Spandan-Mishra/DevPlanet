@@ -24,7 +24,7 @@ This is a monorepo containing all services:
 - `/forge` - Python algorithmic engine codebase (Procedural generation)
   - `/forge/test/` - Consolidated Python test directory (e.g. `/forge/test/unit/`)
 - `/canvas` - TypeScript frontend codebase (3D WebGL renderer)
-  - `/canvas/test/` - Consolidated frontend test directory
+  - `/canvas/test/` - Consolidated frontend test directory (e.g. `/canvas/test/unit/`)
 - `/docs` - Architecture specifications and design docs
 
 ## Branching & CodeRabbit Quality Gate
@@ -40,15 +40,15 @@ To maintain high code quality, test integrity, and strict isolation across layer
     - `feat/forge-spherical-topology`
     - `feat/forge-palette-and-climate`
     - `feat/forge-celestial-and-ecosystem`
-    - `feat/canvas-threejs-setup`
+    - `feat/canvas-scaffold-and-contracts`
 - **Layer Isolation:** Feature branches must strictly modify their respective layer (`api/`, `forge/`, or `canvas/`). Cross-layer changes should only occur for shared contracts or Docker Compose updates.
 
 ### 2. CodeRabbit AI PR Reviews
 - Every Pull Request targeting `main` is automatically reviewed by **CodeRabbit** according to `.coderabbit.yaml`.
 - **Review Directives by Layer:**
   - **`api/` (Go):** Concurrency safety, context cancellation, goroutine leak checks, strict test placement in `api/test/`, Redis connection pooling, and GraphQL rate limit safety.
-  - **`forge/` (Python):** NumPy vectorization over raw loops, deterministic PRNG seeding, continuous climate/Oklab math, and strict test containment in `forge/test/`.\
-  - **`canvas/` (TypeScript / WebGL):** GPU resource cleanup/disposal, 60 FPS main thread guarantee, draw call minimization (InstancedMesh/LOD), and pure SPA architecture (no SSR).\
+  - **`forge/` (Python):** NumPy vectorization over raw loops, deterministic PRNG seeding, continuous climate/Oklab math, and strict test containment in `forge/test/`.
+  - **`canvas/` (TypeScript / WebGL):** GPU resource cleanup/disposal, 60 FPS main thread guarantee, draw call minimization (InstancedMesh/LOD), and pure SPA architecture (no SSR).
 - **Merge Criteria:** All critical CodeRabbit feedback and developer reviews must be resolved before merging into `main`.
 
 ## Current Status & Milestones
@@ -60,19 +60,24 @@ To maintain high code quality, test integrity, and strict isolation across layer
     *   Redis caching & async task queueing with workers (`api/internal/store/`, `cache/`, `queue/`, `worker/`).
     *   Consolidated test suites in `api/test/unit/`.
     *   CodeRabbit configuration (`.coderabbit.yaml`) & Branching strategy established.
-    *   *The Forge* Phase 1: Foundation & Pydantic v2 data contracts.
-    *   *The Forge* Phase 2: Deterministic Seeder (`seeder.py`) & Vectorized Math Profiling (`math_profile.py`).
-    *   *The Forge* Phase 3: Spherical Topology Engine on $S^2$ (`topology.py`).
-    *   *The Forge* Phase 4: Continuous Oklab Color Space & Climate Matrix Synthesizer (`palette.py`).
-    *   *The Forge* Chore: Strict type annotations, type-safe math utilities, pre-commit configuration, and extended Ruff/Pyright quality gates.
-    *   *The Forge* Phase 5: Celestial Mechanics, Planetary Atmosphere, Inhabitant Boids Ecosystem & Master Genome Pipeline:
-        - `CelestialMechanicsEngine` (`celestial.py`): Keplerian orbital moon systems ($1-5$ satellites), collision-free orbital tiers, and instanced asteroid dust rings.
-        - `AtmosphereEngine` (`atmosphere.py`): Continuous Rayleigh wavelength $(R, G, B)$ scattering shifted by developer language chromas, Mie particulate aerosol scattering, and cloud circulation.
-        - `EcosystemEngine` (`ecosystem.py`): Craig Reynolds (1987) flocking boid inhabitants across 3 archetypes (Avian Gliders, Pelagic Swimmers, Luminescent Wisps) and harmonic polar aurora borealis field.
-        - `PlanetGenomeOrchestrator` (`orchestrator.py`) & FastAPI endpoint `POST /api/v1/genome/generate`: End-to-end unified genome generation pipeline.
+    *   *The Forge* (Python Procedural Engine) Phases 1 to 5:
+        - Deterministic Seeder (`seeder.py`) & Vectorized Math Profiling (`math_profile.py`).
+        - Spherical Topology Engine on $S^2$ (`topology.py`).
+        - Continuous Oklab Palette & Climate Matrix Synthesizer (`palette.py`).
+        - Celestial Mechanics (`celestial.py`), Atmosphere (`atmosphere.py`), and Boids Ecosystem (`ecosystem.py`).
+        - Master Orchestrator (`orchestrator.py`) & FastAPI endpoint `POST /api/v1/genome/generate`.
         - 43 passing unit tests in `forge/test/unit/`.
+    *   *The Canvas* (Frontend 3D WebGL SPA) Phase 1:
+        - React 19 + TypeScript + Vite + Tailwind CSS v4 + Vitest setup.
+        - Full TypeScript data contracts in `src/types/genome.ts` mirroring Python Pydantic contracts.
+        - Zustand global store (`planetStore.ts`) managing genome, hover states, and orbital toggles.
+        - Universal cosmic background simulation with starfield and space dust drift (`CosmicBackground.tsx`).
+        - Centered 3D planetary core with 360-degree `OrbitControls` (pan, rotate, zoom) and raycast hitboxes (`SceneViewport.tsx`, `PlanetCore.tsx`).
+        - Top-left `DevPlanet` branding, top-right `@username` badge (`HeaderOverlay.tsx`).
+        - Crisp high-contrast white legend tooltip bubble with repository metrics on landform hover (`RepoHoverTooltip.tsx`).
+        - 6 passing unit tests in `canvas/test/unit/`.
 *   **Next Immediate Tasks:**
-    *   *The Canvas* Phase 1: TypeScript / React / Three.js (R3F) frontend initialization and procedural shader pipeline.
+    *   *The Canvas* Phase 2: Custom GPU GLSL Shaders for $S^2$ FBM elevation displacement, continuous Oklab color ramping, and Rayleigh atmospheric glow.
 
 ## Agent Instructions
 1. Always work within the active feature branch designated for the specific layer.
