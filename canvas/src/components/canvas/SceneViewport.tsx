@@ -9,6 +9,7 @@ export function SceneViewport() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#030308]">
       <Canvas
+        shadows
         camera={{
           position: [0, 60, 320],
           fov: 45,

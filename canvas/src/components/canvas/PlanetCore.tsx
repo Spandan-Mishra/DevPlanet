@@ -76,10 +76,10 @@ export function PlanetCore() {
           />
         </mesh>
 
-        {/* Ocean Surface Layer */}
+        {/* Ocean Surface Layer (small positive offset to prevent z-fighting across seaLevel bounds) */}
         <mesh>
           <sphereGeometry
-            args={[topology.baseRadius * (0.99 + topology.seaLevel * 0.01), 48, 48]}
+            args={[topology.baseRadius * (1.002 + topology.seaLevel * 0.02), 48, 48]}
           />
           <meshStandardMaterial
             color={surfaceMaterial.elevationColorRamp[0]?.hex || '#0a192f'}

@@ -19,10 +19,23 @@ export function RepoHoverTooltip() {
     primaryLanguage: { name: 'Rust', color: '#dea584' },
   }
 
-  // Offset tooltip slightly above and right of pointer
+  // Tooltip dimensions and screen boundaries
+  const tooltipWidth = 256
+  const tooltipHeight = 160
+  const margin = 16
+
+  const rawLeft = hoverPosition2D.x + margin
+  const rawTop = hoverPosition2D.y - 120
+
+  const maxLeft = typeof window !== 'undefined' ? Math.max(margin, window.innerWidth - tooltipWidth - margin) : rawLeft
+  const maxTop = typeof window !== 'undefined' ? Math.max(margin, window.innerHeight - tooltipHeight - margin) : rawTop
+
+  const clampedLeft = Math.max(margin, Math.min(rawLeft, maxLeft))
+  const clampedTop = Math.max(margin, Math.min(rawTop, maxTop))
+
   const tooltipStyle: React.CSSProperties = {
-    left: `${Math.min(hoverPosition2D.x + 16, window.innerWidth - 280)}px`,
-    top: `${Math.max(hoverPosition2D.y - 120, 20)}px`,
+    left: `${clampedLeft}px`,
+    top: `${clampedTop}px`,
   }
 
   return (

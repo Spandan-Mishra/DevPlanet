@@ -16,11 +16,10 @@ function createSeededRandom(seed = 42) {
   }
 }
 
-function generateStars(count: number): [Float32Array, Float32Array, Float32Array] {
+function generateStars(count: number): [Float32Array, Float32Array] {
   const rng = createSeededRandom(1337)
   const positions = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
-  const sizes = new Float32Array(count)
 
   const colorChoices = [
     new THREE.Color('#ffffff'),
@@ -45,11 +44,9 @@ function generateStars(count: number): [Float32Array, Float32Array, Float32Array
     colors[i * 3] = color.r
     colors[i * 3 + 1] = color.g
     colors[i * 3 + 2] = color.b
-
-    sizes[i] = 1.0 + rng() * 2.5
   }
 
-  return [positions, colors, sizes]
+  return [positions, colors]
 }
 
 function generateDust(count: number): Float32Array {
@@ -78,7 +75,7 @@ export function CosmicBackground({
   const starsRef = useRef<THREE.Points>(null)
   const dustRef = useRef<THREE.Points>(null)
 
-  const [starPositions, starColors, starSizes] = useMemo(
+  const [starPositions, starColors] = useMemo(
     () => generateStars(starCount),
     [starCount]
   )
@@ -113,7 +110,6 @@ export function CosmicBackground({
             args={[starPositions, 3]}
           />
           <bufferAttribute attach="attributes-color" args={[starColors, 3]} />
-          <bufferAttribute attach="attributes-size" args={[starSizes, 1]} />
         </bufferGeometry>
         <pointsMaterial
           size={1.8}
