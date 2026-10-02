@@ -3,6 +3,7 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { AsteroidRings } from '@/components/canvas/AsteroidRings'
 import { KeplerianMoons } from '@/components/canvas/KeplerianMoons'
+import { Lifeforms } from '@/components/canvas/Lifeforms'
 import { createAtmosphereMaterial } from '@/shaders/atmosphereShader'
 import { createTerrainMaterial } from '@/shaders/terrainShader'
 import { usePlanetStore } from '@/store/planetStore'
@@ -159,6 +160,9 @@ export function PlanetCore() {
             </mesh>
           </group>
         ))}
+
+        {/* Smart LoD Lifeforms Simulation */}
+        <Lifeforms />
       </group>
 
       {/* 2. Instanced Planetary Asteroid Dust Rings */}
