@@ -46,6 +46,24 @@ describe('RepoDetailModal', () => {
     expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
+  it('renders "Unknown" for primary language when landform has no predefined stats', () => {
+    const unlistedLandform = {
+      repoName: 'unlisted-repo',
+      plateCenter: [0.1, 0.2, 0.9] as [number, number, number],
+      plateRadius: 0.2,
+      elevationFactor: 1.1,
+      roughness: 0.4,
+    }
+    usePlanetStore.setState({
+      selectedLandform: unlistedLandform,
+    })
+
+    render(<RepoDetailModal />)
+
+    expect(screen.getByText('unlisted-repo')).toBeInTheDocument()
+    expect(screen.getByText('Unknown')).toBeInTheDocument()
+  })
+
   it('closes modal when the close button is clicked', () => {
     const landform = mockPlanetGenome.topology.landforms[0]!
     usePlanetStore.setState({
@@ -93,5 +111,49 @@ describe('RepoDetailModal', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
 
     expect(usePlanetStore.getState().selectedLandform).toBeNull()
+  })
+
+  it('traps Tab navigation within the modal card', () => {
+    const landform = mockPlanetGenome.topology.landforms[0]!
+    usePlanetStore.setState({
+      selectedLandform: landform,
+    })
+
+    render(<RepoDetailModal />)
+
+    const closeBtn = screen.getByRole('button', { name: /close modal/i })
+    const githubLink = screen.getByRole('link', { name: /view on github/i })
+
+    // Focus last element (View on GitHub link)
+    githubLink.focus()
+    expect(document.activeElement).toBe(githubLink)
+
+    // Press Tab on last element -> wraps to first focusable element (close button)
+    fireEvent.keyDown(window, { key: 'Tab' })
+    expect(document.activeElement).toBe(closeBtn)
+
+    // Press Shift+Tab on first element -> wraps back to last focusable element
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(githubLink)
+  })
+
+  it('restores focus to previously active element upon modal close', () => {
+    const triggerButton = document.createElement('button')
+    triggerButton.textContent = 'Trigger'
+    document.body.appendChild(triggerButton)
+    triggerButton.focus()
+    expect(document.activeElement).toBe(triggerButton)
+
+    const landform = mockPlanetGenome.topology.landforms[0]!
+    usePlanetStore.setState({
+      selectedLandform: landform,
+    })
+
+    const { unmount } = render(<RepoDetailModal />)
+
+    // Close modal
+    unmount()
+    expect(document.activeElement).toBe(triggerButton)
+    document.body.removeChild(triggerButton)
   })
 })
