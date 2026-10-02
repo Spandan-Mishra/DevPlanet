@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   CircleDot,
   ExternalLink,
@@ -18,19 +18,78 @@ export function RepoDetailModal() {
   const repoStats = usePlanetStore((state) => state.repoStats)
   const username = usePlanetStore((state) => state.genome.meta.username)
 
-  // Listen for Escape key to close modal
+  const previousActiveElementRef = useRef<HTMLElement | null>(null)
+  const modalCardRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Focus trap, focus restoration, and Escape key listener
   useEffect(() => {
     if (!selectedLandform) return
 
+    // Store the previously focused element to restore when modal closes
+    previousActiveElementRef.current = document.activeElement as HTMLElement | null
+
+    // Initial focus on close button
+    const focusTimer = setTimeout(() => {
+      closeButtonRef.current?.focus()
+    }, 0)
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
         closeSelectedLandform()
+        return
+      }
+
+      if (e.key === 'Tab') {
+        const container = modalCardRef.current
+        if (!container) return
+
+        const focusableSelector =
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        const focusableElements = Array.from(
+          container.querySelectorAll<HTMLElement>(focusableSelector)
+        ).filter(
+          (el) =>
+            !el.hasAttribute('disabled') &&
+            el.getAttribute('aria-hidden') !== 'true'
+        )
+
+        if (focusableElements.length === 0) {
+          e.preventDefault()
+          return
+        }
+
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+
+        if (e.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            !container.contains(document.activeElement)
+          ) {
+            e.preventDefault()
+            lastElement?.focus()
+          }
+        } else {
+          if (
+            document.activeElement === lastElement ||
+            !container.contains(document.activeElement)
+          ) {
+            e.preventDefault()
+            firstElement?.focus()
+          }
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
+
     return () => {
+      clearTimeout(focusTimer)
       window.removeEventListener('keydown', handleKeyDown)
+      // Restore focus to previously focused element upon modal closure
+      previousActiveElementRef.current?.focus?.()
     }
   }, [selectedLandform, closeSelectedLandform])
 
@@ -62,6 +121,7 @@ export function RepoDetailModal() {
     >
       {/* Modal Card (click inside does not trigger backdrop close) */}
       <div
+        ref={modalCardRef}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-lg border-2 border-black bg-white p-5 text-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all animate-in zoom-in-95 sm:p-6"
       >
@@ -79,6 +139,7 @@ export function RepoDetailModal() {
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={closeSelectedLandform}
             aria-label="Close modal"
