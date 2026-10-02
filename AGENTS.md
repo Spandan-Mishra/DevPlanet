@@ -27,29 +27,36 @@ This is a monorepo containing all services:
   - `/canvas/test/` - Consolidated frontend test directory (e.g. `/canvas/test/unit/`)
 - `/docs` - Architecture specifications and design docs
 
-## Branching & CodeRabbit Quality Gate
-To maintain high code quality, test integrity, and strict isolation across layers, **no direct pushes to `main` are permitted for feature development**.
+## Agent Operating Model (Planner vs. Implementation)
+Development follows a strict dual-agent paradigm:
+1. **Planner Agent:**
+   - Lives in the planning thread.
+   - Plans architecture, reviews requirements, sequences work, tracks milestones, and formulates precise, self-contained implementation prompts.
+   - **Does NOT emit implementation code.**
+2. **Implementation Agent:**
+   - Lives in a separate execution thread.
+   - Receives tasks via prompts crafted by the Planner Agent.
+   - Executes file edits, runs tests, performs verification, and commits changes incrementally.
 
-### 1. Layer-Specific Branching Convention
-- **Format:** `<type>/<layer>-<feature-description>`
-  - Types: `feat`, `fix`, `refactor`, `test`, `perf`
-  - Layers: `api`, `forge`, `canvas`, `infra`
-  - Examples:
-    - `feat/forge-scaffold-and-contracts`
-    - `feat/forge-seeder-and-math-engine`
-    - `feat/forge-spherical-topology`
-    - `feat/forge-palette-and-climate`
-    - `feat/forge-celestial-and-ecosystem`
-    - `feat/canvas-scaffold-and-contracts`
-- **Layer Isolation:** Feature branches must strictly modify their respective layer (`api/`, `forge/`, or `canvas/`). Cross-layer changes should only occur for shared contracts or Docker Compose updates.
-
-### 2. CodeRabbit AI PR Reviews
-- Every Pull Request targeting `main` is automatically reviewed by **CodeRabbit** according to `.coderabbit.yaml`.
-- **Review Directives by Layer:**
-  - **`api/` (Go):** Concurrency safety, context cancellation, goroutine leak checks, strict test placement in `api/test/`, Redis connection pooling, and GraphQL rate limit safety.
-  - **`forge/` (Python):** NumPy vectorization over raw loops, deterministic PRNG seeding, continuous climate/Oklab math, and strict test containment in `forge/test/`.
-  - **`canvas/` (TypeScript / WebGL):** GPU resource cleanup/disposal, 60 FPS main thread guarantee, draw call minimization (InstancedMesh/LOD), and pure SPA architecture (no SSR).
-- **Merge Criteria:** All critical CodeRabbit feedback and developer reviews must be resolved before merging into `main`.
+## Implementation Agent Guidelines & Strict Directives
+When implementing features or bug fixes, the Implementation Agent MUST follow these rules:
+1. **Granular Commits (Strict Rule):**
+   - **NEVER** push massive multi-hundred or 1,000+ line commits all at once.
+   - Break work down into small, logical steps. For each step: make changes, test, and commit with an informative conventional commit message (`feat(canvas): ...`, `fix(canvas): ...`).
+2. **Branching Convention:**
+   - Branch format: `<type>/<layer>-<feature-description>` (e.g. `feat/canvas-smart-boids-and-repo-modal`).
+   - Create branches strictly off the latest `main`.
+3. **Layer Isolation:**
+   - Keep changes restricted to the specified service layer (`canvas/`, `forge/`, or `api/`).
+4. **Performance & Memory Management in WebGL (`canvas/`):**
+   - **Smart Level of Detail (LoD):** Do not render distant micro-entities. Only render lifeforms/boids when the camera is sufficiently close to a landform and within the viewing frustum.
+   - **Draw Call Minimization:** Use Three.js `InstancedMesh` for rendering recurring entities (boids, debris, flora).
+   - **Resource Disposal:** Always clean up custom materials, geometries, and textures via `useEffect` dispose handlers to prevent GPU memory leaks.
+5. **Quality Gates & Verification:**
+   - Before completing any task, run the full verification pipeline:
+     - Linter: `npx oxlint` (must pass with 0 errors).
+     - Typecheck & Build: `npm run build` (`tsc -b && vite build`) (must pass with 0 errors).
+     - Test Suite: `npx vitest run` (100% tests passing).
 
 ## Current Status & Milestones
 *   **Completed:**
@@ -60,29 +67,10 @@ To maintain high code quality, test integrity, and strict isolation across layer
     *   Redis caching & async task queueing with workers (`api/internal/store/`, `cache/`, `queue/`, `worker/`).
     *   Consolidated test suites in `api/test/unit/`.
     *   CodeRabbit configuration (`.coderabbit.yaml`) & Branching strategy established.
-    *   *The Forge* (Python Procedural Engine) Phases 1 to 5:
-        - Deterministic Seeder (`seeder.py`) & Vectorized Math Profiling (`math_profile.py`).
-        - Spherical Topology Engine on $S^2$ (`topology.py`).
-        - Continuous Oklab Palette & Climate Matrix Synthesizer (`palette.py`).
-        - Celestial Mechanics (`celestial.py`), Atmosphere (`atmosphere.py`), and Boids Ecosystem (`ecosystem.py`).
-        - Master Orchestrator (`orchestrator.py`) & FastAPI endpoint `POST /api/v1/genome/generate`.
-        - 43 passing unit tests in `forge/test/unit/`.
-    *   *The Canvas* (Frontend 3D WebGL SPA) Phase 1:
-        - React 19 + TypeScript + Vite + Tailwind CSS v4 + Vitest setup.
-        - Full TypeScript data contracts in `src/types/genome.ts` mirroring Python Pydantic contracts.
-        - Zustand global store (`planetStore.ts`) managing genome, hover states, and orbital toggles.
-        - Universal cosmic background simulation with starfield and space dust drift (`CosmicBackground.tsx`).
-        - Centered 3D planetary core with 360-degree `OrbitControls` (pan, rotate, zoom) and raycast hitboxes (`SceneViewport.tsx`, `PlanetCore.tsx`).
-        - Top-left `DevPlanet` branding, top-right `@username` badge (`HeaderOverlay.tsx`).
-        - Crisp high-contrast white legend tooltip bubble with repository metrics on landform hover (`RepoHoverTooltip.tsx`).
-        - 6 passing unit tests in `canvas/test/unit/`.
-*   **Next Immediate Tasks:**
-    *   *The Canvas* Phase 2: Custom GPU GLSL Shaders for $S^2$ FBM elevation displacement, continuous Oklab color ramping, and Rayleigh atmospheric glow.
-
-## Agent Instructions
-1. Always work within the active feature branch designated for the specific layer.
-2. Maintain strict segregation between the `api`, `forge`, and `canvas` layers.
-3. Write modular, performant code suitable for a lean VPS deployment.
-4. Keep all tests organized inside dedicated test directories (`test/unit/`) rather than scattered in internal packages.
-5. The user acts as the lead developer; provide code for review incrementally and ensure you are aligned on direction before making massive multi-file changes.
-6. Keep this `AGENTS.md` file updated as major milestones are completed or architecture shifts.
+    *   *The Forge* (Python Procedural Engine) Phases 1 to 5 (PRs #1, #2, #3, #4, #5, #6 Merged).
+    *   *The Canvas* Phase 1: SPA Scaffolding, R3F Viewport, Cosmic Background, and Legend Tooltip (PR #7 Merged).
+    *   *The Canvas* Phase 2: Procedural GPU Terrain Shaders ($S^2$ FBM), Rayleigh/Mie Atmosphere, Instanced Asteroid Rings, Keplerian Moons (PR #8 Merged).
+*   **Current Active Milestone:**
+    *   *The Canvas* Phase 3:
+        1. Smart camera distance / frustum-based Level-of-Detail (LoD) lifeform rendering (Boids) around zoomed landforms.
+        2. Interactive Landform Click Modal: Rich GitHub repository summary card with glimpse metrics, topics, and quick actions.
