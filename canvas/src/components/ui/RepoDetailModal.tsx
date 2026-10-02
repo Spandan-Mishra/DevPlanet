@@ -45,7 +45,7 @@ export function RepoDetailModal() {
     forks: Math.round(selectedLandform.roughness * 80),
     commitCount: Math.round(selectedLandform.plateRadius * 600),
     openIssues: 0,
-    primaryLanguage: { name: 'Rust', color: '#dea584' },
+    primaryLanguage: null,
     url: `https://github.com/${username}/${selectedLandform.repoName}`,
   }
 
@@ -104,11 +104,11 @@ export function RepoDetailModal() {
             <span
               className="h-2.5 w-2.5 rounded-full border border-black/30"
               style={{
-                backgroundColor: stat.primaryLanguage?.color || '#333',
+                backgroundColor: stat.primaryLanguage?.color || '#71717a',
               }}
             />
             <span className="font-mono font-bold text-zinc-900">
-              {stat.primaryLanguage?.name || 'Markdown'}
+              {stat.primaryLanguage?.name || 'Unknown'}
             </span>
           </div>
         </div>
