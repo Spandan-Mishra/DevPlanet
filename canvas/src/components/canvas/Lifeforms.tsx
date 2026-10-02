@@ -287,6 +287,8 @@ export function Lifeforms() {
           meshRef={(el) => {
             if (el) {
               meshesRef.current[spec.type] = el
+            } else {
+              delete meshesRef.current[spec.type]
             }
           }}
         />
