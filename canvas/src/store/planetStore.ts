@@ -18,6 +18,7 @@ interface PlanetState {
     screenPos?: { x: number; y: number } | null
   ) => void
   setSelectedLandform: (landform: LandformNode | null) => void
+  closeSelectedLandform: () => void
   setRepoStats: (stats: Record<string, LandformRepoStat>) => void
   setIsLoading: (loading: boolean) => void
   toggleAutoRotate: () => void
@@ -35,6 +36,8 @@ export const usePlanetStore = create<PlanetState>((set) => ({
       stars: 1250,
       forks: 340,
       commitCount: 580,
+      openIssues: 12,
+      url: 'https://github.com/spandev/DevPlanet',
       primaryLanguage: { name: 'Rust', color: '#dea584' },
     },
     'forge-engine': {
@@ -43,6 +46,8 @@ export const usePlanetStore = create<PlanetState>((set) => ({
       stars: 480,
       forks: 110,
       commitCount: 290,
+      openIssues: 4,
+      url: 'https://github.com/spandev/forge-engine',
       primaryLanguage: { name: 'Python', color: '#3572A5' },
     },
     'canvas-renderer': {
@@ -51,6 +56,8 @@ export const usePlanetStore = create<PlanetState>((set) => ({
       stars: 620,
       forks: 150,
       commitCount: 340,
+      openIssues: 7,
+      url: 'https://github.com/spandev/canvas-renderer',
       primaryLanguage: { name: 'TypeScript', color: '#3178C6' },
     },
   },
@@ -64,6 +71,7 @@ export const usePlanetStore = create<PlanetState>((set) => ({
       hoverPosition2D: screenPos,
     }),
   setSelectedLandform: (landform) => set({ selectedLandform: landform }),
+  closeSelectedLandform: () => set({ selectedLandform: null }),
   setRepoStats: (stats) => set({ repoStats: stats }),
   setIsLoading: (isLoading) => set({ isLoading }),
   toggleAutoRotate: () => set((state) => ({ autoRotate: !state.autoRotate })),
