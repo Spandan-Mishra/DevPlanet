@@ -137,6 +137,8 @@ export interface LandformRepoStat {
   stars: number
   forks: number
   commitCount: number
+  openIssues?: number
+  url?: string
   primaryLanguage?: {
     name: string
     color: string
